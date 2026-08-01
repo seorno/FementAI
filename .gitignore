@@ -25,9 +25,6 @@ env/
 backend/data/raw/
 
 # Trained models (large binary files)
-backend/models/trained/**/*.joblib
-backend/models/trained/**/*.pkl
-backend/models/trained/**/*.json
 !backend/models/trained/**/.gitkeep
 
 # Database

@@ -64,8 +64,10 @@ FermentAI is an advanced ML-driven tool that predicts fermentation outcomes (fla
 ### Backend (Render)
 The backend is designed to be easily deployed on Render as a Web Service.
 1. Connect your repository to Render.
-2. Build Command: `pip install -r backend/requirements.txt && PYTHONPATH=backend python backend/scripts/train_models.py`
+2. Build Command: `pip install -r backend/requirements.txt`
 3. Start Command: `cd backend && PYTHONPATH=. uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+4. Set the Environment Variable `DATABASE_URL` to your permanent PostgreSQL database (e.g., Neon or Supabase).
+5. Set `FERMENTAI_CORS_ORIGINS` to your frontend production URL.
 
 ### Frontend (Vercel)
 The Next.js frontend can be deployed on Vercel with zero-config.
@@ -73,6 +75,19 @@ The Next.js frontend can be deployed on Vercel with zero-config.
 2. Set the Root Directory to `frontend`.
 3. Add the Environment Variable `NEXT_PUBLIC_API_URL` pointing to your deployed Render backend URL.
 4. Deploy!
+
+## Model Retraining
+The Render deployment pipeline **does not** automatically retrain the machine learning models. Instead, the pre-trained model artifacts (`.joblib` files) are tracked in the Git repository and loaded instantly on startup. 
+
+When you acquire new real-world data and want to update the models, you must manually run the training script locally and commit the resulting artifacts:
+```bash
+# From the backend directory:
+PYTHONPATH=. python scripts/train_models.py
+git add models/trained/
+git commit -m "Update models with new data"
+git push
+```
+The Render web service will automatically pull the new branch and restart the API with the fresh models.
 
 ## Core Features
 - **Predictive ML**: Forecast acidity, alcohol percentage, and off-flavor risk based on initial parameters (temperature, pH, substrate, duration).

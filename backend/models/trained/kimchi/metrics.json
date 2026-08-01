@@ -1,0 +1,1 @@
+{"real_models": {"acidity": {"rmse": 0.20936411663256277, "mae": 0.16333333333333325, "r2": "N/A (too few samples for R2)"}}, "simulated_models": {"acidity": {"rmse": 0.15454622458885162, "mae": 0.1197245852646698, "r2": 0.9848159836711016}, "off_flavor": {"accuracy": 1.0, "f1": 1.0, "auroc": 1.0}}}
