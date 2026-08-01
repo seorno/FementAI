@@ -41,6 +41,7 @@ def _load_network(product_type: str) -> NetworkResponse | None:
                     edges=[NetworkEdge(**e) for e in cached.edges],
                     clusters=[NetworkCluster(**c) for c in (cached.clusters or [])],
                     batch_count=cached.batch_count or 0,
+                    data_provenance=cached.data_provenance or "synthetic",
                 )
     except Exception as e:
         logger.warning(f"Could not load cached network: {e}")

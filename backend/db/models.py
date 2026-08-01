@@ -120,6 +120,7 @@ class NetworkCache(Base):
     clusters_json = Column(Text, nullable=True)
     computed_at = Column(DateTime, default=datetime.utcnow)
     batch_count = Column(Integer, nullable=True)  # How many batches were used
+    data_provenance = Column(String(50), nullable=True, default="synthetic")
     
     @property
     def nodes(self) -> list[dict]:

@@ -102,16 +102,44 @@ def predict(request: PredictionRequest, background_tasks: BackgroundTasks) -> Pr
     if predict_fn is not None:
         try:
             result = predict_fn(batch)
-            is_sim = getattr(result, "is_simulated_prediction", False)
-            background_tasks.add_task(log_analytics, product_type.value, is_sim)
-            
-            return PredictionResponse(
-                prediction_id=prediction_id,
-                product_type=product_type.value,
-                **result.model_dump(),
-            )
-        except Exception as e:
-            logger.warning(f"Model prediction failed, using heuristic fallback: {e}")
+            if getattr(result, "acidity", None) is not None:
+                is_sim = getattr(result, "is_simulated_prediction", False)
+                background_tasks.add_task(log_analytics, product_type.value, is_sim)
+                
+                confidence = {}
+                if getattr(result, "acidity_ci", None):
+                    confidence["acidity"] = {"lower": result.acidity_ci[0], "upper": result.acidity_ci[1]}
+                if getattr(result, "alcohol_pct_ci", None):
+                    confidence["alcohol_pct"] = {"lower": result.alcohol_pct_ci[0], "upper": result.alcohol_pct_ci[1]}
+                
+                # Default completion to 70% of duration
+                completion_hours = batch.duration_hours * 0.7 if batch.duration_hours else 0.0
+                
+                top_explanations = []
+                explain_fn = _load_explainer(product_type.value)
+                if explain_fn is not None:
+                    # Acidity model path as default target for SHAP
+                    model_path = str(MODELS_DIR / product_type.value / ("acidity_model_sim.joblib" if is_sim else "acidity_model.joblib"))
+                    try:
+                        explainer_res = explain_fn(batch, model_path)
+                        top_explanations = [ExplanationItem(**item) for item in explainer_res]
+                    except Exception as e:
+                        logger.warning(f"Failed to generate SHAP explanations: {e}")
+                
+                return PredictionResponse(
+                    prediction_id=prediction_id,
+                    product_type=product_type.value,
+                    predicted_acidity=result.acidity,
+                    predicted_alcohol_pct=result.alcohol_pct,
+                    off_flavor_risk=result.off_flavor_risk or 0.0,
+                    estimated_completion_hours=completion_hours,
+                    fermentation_curve=result.fermentation_curve or [],
+                    confidence=confidence,
+                    top_explanations=top_explanations,
+                    is_simulated_prediction=is_sim,
+                )
+        except Exception:
+            logger.exception("Model prediction failed:")
     
     # ── Heuristic fallback (when models aren't trained yet) ─────────
     background_tasks.add_task(log_analytics, product_type.value, True)

@@ -43,8 +43,12 @@ export async function predictBatch(data: any) {
 export async function getNetwork(productType: ProductType) {
   try {
     const res = await fetch(`${API_URL}/api/network/${productType.toLowerCase()}`);
-    if (!res.ok) throw new Error('API Error');
-    return await res.json();
+    const raw = await res.json();
+    return {
+      nodes: raw.nodes.map((n: any) => ({ data: { id: n.id, label: n.label, abundance: n.size * 100 } })),
+      edges: raw.edges.map((e: any) => ({ data: { source: e.source, target: e.target, type: e.interaction_type, strength: e.weight } })),
+      data_provenance: raw.data_provenance || "synthetic"
+    };
   } catch (error) {
     console.warn('API fetch failed, using mock data');
     return mockNetwork(productType);

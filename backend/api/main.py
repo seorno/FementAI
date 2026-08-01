@@ -13,7 +13,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import explain, network, predict, products
+from api.routes import analytics, explain, network, predict, products
 
 # Configure logging
 logging.basicConfig(
@@ -50,9 +50,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ── Routes ──────────────────────────────────────────────────────────────
-from api.routes import predict, network, analytics
 
 app.include_router(predict.router, prefix="/api")
 app.include_router(network.router, prefix="/api")

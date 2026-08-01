@@ -17,7 +17,19 @@ export default function ExplorePage() {
   return (
     <div className="flex flex-col h-full max-w-7xl mx-auto px-4 py-8 w-full">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-4xl font-bold">Microbial Network</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-4xl font-bold">Microbial Network</h1>
+          {networkData?.data_provenance && (
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
+              networkData.data_provenance === 'synthetic' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' :
+              networkData.data_provenance === 'real' ? 'border-green-500/50 bg-green-500/10 text-green-400' :
+              'border-blue-500/50 bg-blue-500/10 text-blue-400'
+            }`}>
+              {networkData.data_provenance === 'synthetic' ? 'Simulated / demo data' :
+               networkData.data_provenance === 'real' ? 'Real literature data' : 'Blended data'}
+            </span>
+          )}
+        </div>
         <ProductSelector value={product} onChange={setProduct} />
       </div>
       

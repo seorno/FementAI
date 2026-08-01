@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 import pandas as pd
+import numpy as np
 import joblib
 import shap
 
@@ -66,8 +67,10 @@ def explain_prediction(batch: FermentationBatch, model_path: str) -> list[dict[s
             
         explanations.append({
             "feature": feat_name,
-            "value": float(val),
-            "text": text
+            "display_name": feat_name.replace("clr_", "").title(),
+            "shap_value": float(val),
+            "direction": "positive" if val > 0 else "negative",
+            "explanation": text
         })
         
     return explanations

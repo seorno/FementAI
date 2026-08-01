@@ -51,7 +51,13 @@ def run_pipeline() -> None:
     
     inserted_count = 0
     with get_session(engine) as session:
+        # Get existing batch IDs
+        existing = {row[0] for row in session.query(BatchRecord.batch_id).all()}
+        
         for batch in normalized_batches:
+            if batch.batch_id in existing:
+                continue
+                
             record = BatchRecord(
                 batch_id=batch.batch_id,
                 product_type=batch.product_type.value,

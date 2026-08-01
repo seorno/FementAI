@@ -41,7 +41,7 @@ def run_training_pipeline():
         
         # 2. Build Microbial Network
         logger.info(f"Building microbial network for {product_type}")
-        G = build_network(product_type, engine)
+        G, provenance, batch_count = build_network(product_type, engine)
         
         # 3. Build Community Model
         logger.info(f"Building community model for {product_type}")
@@ -61,7 +61,8 @@ def run_training_pipeline():
                 {"centroid": c, "label": l} 
                 for c, l in zip(community_model.centroids, community_model.labels)
             ]
-            cache.batch_count = G.number_of_nodes() if G else 0
+            cache.batch_count = batch_count
+            cache.data_provenance = provenance
             
     # Print validation report
     print("\n" + "="*50)

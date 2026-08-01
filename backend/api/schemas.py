@@ -172,6 +172,7 @@ class NetworkResponse(BaseModel):
     edges: list[NetworkEdge]
     clusters: list[NetworkCluster] = Field(default_factory=list)
     batch_count: int = Field(0, description="Number of batches used to build network")
+    data_provenance: str = Field("synthetic", description="real, synthetic, or blended")
 
 
 # ── Product Schemas ─────────────────────────────────────────────────────

@@ -13,13 +13,23 @@ from db.database import get_session
 from db.models import BatchRecord
 from models.outcome.features import clr_transform
 
-def build_network(product_type: str, db_engine=None) -> nx.Graph:
-    """Build microbial co-occurrence network."""
+def build_network(product_type: str, db_engine=None) -> tuple[nx.Graph, str, int]:
+    """Build microbial co-occurrence network. Returns (Graph, provenance, batch_count)."""
     with get_session(db_engine) as session:
-        records = session.query(BatchRecord).filter_by(product_type=product_type).all()
+        records = session.query(BatchRecord).filter(
+            BatchRecord.product_type == product_type,
+            BatchRecord.data_source_type != "synthetic_v1"
+        ).all()
+        provenance = "real"
         
+        if not records or len(records) < 5:
+            records = session.query(BatchRecord).filter_by(product_type=product_type).all()
+            provenance = "blended" if any(r.data_source_type != "synthetic_v1" for r in records) else "synthetic"
+            
     if not records:
-        return nx.Graph()
+        return nx.Graph(), "none", 0
+        
+    batch_count = len(records)
         
     compositions = []
     outcomes_acidity = []
@@ -30,7 +40,7 @@ def build_network(product_type: str, db_engine=None) -> nx.Graph:
             outcomes_acidity.append(r.outcome_acidity or 0.0)
             
     if not compositions:
-        return nx.Graph()
+        return nx.Graph(), provenance, batch_count
         
     df = pd.DataFrame(compositions).fillna(0)
     
@@ -40,7 +50,7 @@ def build_network(product_type: str, db_engine=None) -> nx.Graph:
     
     # Handle single taxon case
     if isinstance(corr_matrix, float):
-        return nx.Graph()
+        return nx.Graph(), provenance, batch_count
         
     G = nx.Graph()
     
@@ -79,7 +89,7 @@ def build_network(product_type: str, db_engine=None) -> nx.Graph:
         for node in G.nodes():
             G.nodes[node]['hub_score'] = 0.0
             
-    return G
+    return G, provenance, batch_count
 
 def network_to_json(G: nx.Graph) -> dict[str, list[Any]]:
     """Convert NetworkX graph to JSON format."""
