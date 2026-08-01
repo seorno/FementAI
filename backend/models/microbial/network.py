@@ -11,6 +11,7 @@ from typing import Any
 
 from db.database import get_session
 from db.models import BatchRecord
+from data.schema import DataSourceType
 from models.outcome.features import clr_transform
 
 def build_network(product_type: str, db_engine=None) -> tuple[nx.Graph, str, int]:
@@ -18,13 +19,13 @@ def build_network(product_type: str, db_engine=None) -> tuple[nx.Graph, str, int
     with get_session(db_engine) as session:
         records = session.query(BatchRecord).filter(
             BatchRecord.product_type == product_type,
-            BatchRecord.data_source_type != "synthetic_v1"
+            BatchRecord.data_source_type == DataSourceType.REAL_LITERATURE.value
         ).all()
         provenance = "real"
         
         if not records or len(records) < 5:
             records = session.query(BatchRecord).filter_by(product_type=product_type).all()
-            provenance = "blended" if any(r.data_source_type != "synthetic_v1" for r in records) else "synthetic"
+            provenance = "blended" if any(r.data_source_type == DataSourceType.REAL_LITERATURE.value for r in records) else "synthetic"
             
     if not records:
         return nx.Graph(), "none", 0
