@@ -40,7 +40,7 @@ app = FastAPI(
 
 _ALLOWED_ORIGINS = os.environ.get(
     "FERMENTAI_CORS_ORIGINS",
-    "*"
+    "http://localhost:3000"
 ).split(",")
 
 app.add_middleware(
