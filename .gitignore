@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data (raw downloads — processed data is committed)
+backend/data/raw/
+
+# Trained models (large binary files)
+backend/models/trained/**/*.joblib
+backend/models/trained/**/*.pkl
+backend/models/trained/**/*.json
+!backend/models/trained/**/.gitkeep
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.next/
+out/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/

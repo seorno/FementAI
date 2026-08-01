@@ -1,0 +1,13 @@
+datasets:
+  huang_2022_kombucha:
+    product_type: "kombucha"
+    source_type: "literature"
+    citation: "Huang et al. (2022) eLife. DOI: 10.7554/eLife.76401"
+  zabat_2018_kimchi:
+    product_type: "kimchi"
+    source_type: "literature"
+    citation: "Zabat et al. (2018) Foods. DOI: 10.3390/foods7070113"
+  synthetic_v1:
+    product_type: "both"
+    source_type: "synthetic"
+    citation: "FermentAI Synthetic Generator V1"

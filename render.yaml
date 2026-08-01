@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: fermentai-backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt && PYTHONPATH=. python scripts/train_models.py"
+    startCommand: "cd backend && PYTHONPATH=. uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set this in the Render dashboard to your permanent Postgres instance URL
+      - key: FERMENTAI_CORS_ORIGINS
+        value: "*"
