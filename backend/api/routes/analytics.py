@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+import os
+from fastapi import APIRouter, Header, HTTPException
 from sqlalchemy import func
 from db.database import get_session
 from db.models import UsageAnalytics
@@ -7,10 +8,14 @@ from typing import Dict, Any
 router = APIRouter(tags=["analytics"])
 
 @router.get("/analytics")
-def get_analytics() -> Dict[str, Any]:
+def get_analytics(x_admin_token: str | None = Header(default=None)) -> Dict[str, Any]:
     """
     Returns basic usage analytics from the internal SQLite/Postgres table.
     """
+    expected_token = os.environ.get("FERMENTAI_ADMIN_TOKEN")
+    if expected_token and x_admin_token != expected_token:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     with get_session() as session:
         total_predictions = session.query(func.count(UsageAnalytics.id)).scalar() or 0
         
