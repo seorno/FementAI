@@ -225,9 +225,13 @@ def get_network(product_type: str) -> NetworkResponse:
     # Fall back to knowledge-based network
     fallback = _FALLBACK_NETWORKS.get(pt.value)
     if fallback is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No network data available for {product_type}",
+        return NetworkResponse(
+            product_type=product_type,
+            nodes=[],
+            edges=[],
+            clusters=[],
+            batch_count=0,
+            data_provenance="none",
         )
     
     return fallback

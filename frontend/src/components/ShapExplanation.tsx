@@ -1,5 +1,5 @@
 'use client';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { COLORS } from '@/lib/constants';
 
 export default function ShapExplanation({ data }: { data: any[] }) {
@@ -10,7 +10,8 @@ export default function ShapExplanation({ data }: { data: any[] }) {
           <XAxis type="number" stroke="#9ca3af" />
           <YAxis dataKey="feature" type="category" stroke="#9ca3af" width={100} />
           <Tooltip contentStyle={{ backgroundColor: COLORS.card, borderColor: 'rgba(255,255,255,0.1)', color: '#fff' }} />
-          <Bar dataKey="importance" fill={COLORS.warning} radius={[0, 4, 4, 0]} />
+          <ReferenceLine x={0} stroke="#4b5563" />
+          <Bar dataKey="importance" fill={COLORS.warning} />
         </BarChart>
       </ResponsiveContainer>
     </div>
