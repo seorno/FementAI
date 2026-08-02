@@ -38,10 +38,16 @@ app = FastAPI(
 
 # ── CORS ────────────────────────────────────────────────────────────────
 
-_ALLOWED_ORIGINS = os.environ.get(
+_raw_origins = os.environ.get(
     "FERMENTAI_CORS_ORIGINS",
-    "http://localhost:3000"
+    "http://localhost:3000,http://localhost:8000"
 ).split(",")
+
+_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/") 
+    for origin in _raw_origins 
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,

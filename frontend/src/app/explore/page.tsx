@@ -19,19 +19,26 @@ export default function ExplorePage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-4xl font-bold">Microbial Network</h1>
-          {networkData?.data_provenance && (
-            <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${
-              networkData.data_provenance === 'synthetic' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400' :
-              networkData.data_provenance === 'real' ? 'border-green-500/50 bg-green-500/10 text-green-400' :
-              'border-blue-500/50 bg-blue-500/10 text-blue-400'
-            }`}>
-              {networkData.data_provenance === 'synthetic' ? 'Simulated / demo data' :
-               networkData.data_provenance === 'real' ? 'Real literature data' : 'Blended data'}
-            </span>
-          )}
         </div>
         <ProductSelector value={product} onChange={setProduct} />
       </div>
+      
+      {networkData?.data_provenance && (
+        <div className={`mb-6 p-4 rounded-lg border flex flex-col gap-1 ${
+          networkData.data_provenance === 'synthetic' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-300' :
+          networkData.data_provenance === 'real' ? 'border-green-500/50 bg-green-500/10 text-green-300' :
+          'border-blue-500/50 bg-blue-500/10 text-blue-300'
+        }`}>
+          <div className="text-lg font-semibold">
+            {networkData.data_provenance === 'synthetic' ? '🧪 Simulated / Demo Data' :
+             networkData.data_provenance === 'real' ? '📚 Real Literature Data' : '🔬 Blended Data'}
+          </div>
+          <p className="text-sm opacity-80">
+            {networkData.data_provenance === 'synthetic' ? 'This network is built using synthetic fallback data. Train the model locally with real data to update.' :
+             networkData.data_provenance === 'real' ? 'This network is built entirely from highly curated published research datasets.' : 'This network uses a blend of published research and simulated data to ensure enough coverage.'}
+          </p>
+        </div>
+      )}
       
       <div className="flex-grow w-full relative">
         <NetworkGraph data={networkData} />

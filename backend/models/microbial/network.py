@@ -25,7 +25,14 @@ def build_network(product_type: str, db_engine=None) -> tuple[nx.Graph, str, int
         
         if not records or len(records) < 5:
             records = session.query(BatchRecord).filter_by(product_type=product_type).all()
-            provenance = "blended" if any(r.data_source_type == DataSourceType.REAL_LITERATURE.value for r in records) else "synthetic"
+            has_real = any(r.data_source_type == DataSourceType.REAL_LITERATURE.value for r in records)
+            has_synth = any(r.data_source_type != DataSourceType.REAL_LITERATURE.value for r in records)
+            if has_real and has_synth:
+                provenance = "blended"
+            elif has_real:
+                provenance = "real"
+            else:
+                provenance = "synthetic"
             
     if not records:
         return nx.Graph(), "none", 0
