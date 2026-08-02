@@ -118,13 +118,14 @@ def predict(request: PredictionRequest, background_tasks: BackgroundTasks) -> Pr
                 top_explanations = []
                 explain_fn = _load_explainer(product_type.value)
                 if explain_fn is not None:
-                    # Acidity model path as default target for SHAP
-                    model_path = str(MODELS_DIR / product_type.value / ("acidity_model_sim.joblib" if is_sim else "acidity_model.joblib"))
-                    try:
-                        explainer_res = explain_fn(batch, model_path)
-                        top_explanations = [ExplanationItem(**item) for item in explainer_res]
-                    except Exception as e:
-                        logger.warning(f"Failed to generate SHAP explanations: {e}")
+                    # Acidity model path as target for SHAP
+                    model_path = getattr(result, "acidity_model_path", None)
+                    if model_path:
+                        try:
+                            explainer_res = explain_fn(batch, model_path)
+                            top_explanations = [ExplanationItem(**item) for item in explainer_res]
+                        except Exception as e:
+                            logger.warning(f"Failed to generate SHAP explanations: {e}")
                 
                 return PredictionResponse(
                     prediction_id=prediction_id,
@@ -138,8 +139,9 @@ def predict(request: PredictionRequest, background_tasks: BackgroundTasks) -> Pr
                     top_explanations=top_explanations,
                     is_simulated_prediction=is_sim,
                 )
-        except Exception:
+        except Exception as e:
             logger.exception("Model prediction failed:")
+            raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
     
     # ── Heuristic fallback (when models aren't trained yet) ─────────
     background_tasks.add_task(log_analytics, product_type.value, True)

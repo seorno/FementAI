@@ -23,6 +23,7 @@ class PredictionResult(BaseModel):
     off_flavor_risk: float | None = None
     fermentation_curve: list[dict[str, float]] | None = None
     is_simulated_prediction: bool = False
+    acidity_model_path: str | None = None
 
 def _get_rf_ci(model, X: pd.DataFrame, percentile: float = 95) -> tuple[float, float]:
     """Calculate confidence interval from RandomForest."""
@@ -33,17 +34,17 @@ def _get_rf_ci(model, X: pd.DataFrame, percentile: float = 95) -> tuple[float, f
     upper = np.percentile(preds, 100 - (100 - percentile) / 2.0)
     return float(lower), float(upper)
 
-def _load_model(model_dir: Path, target_name: str) -> tuple[Any | None, bool]:
-    """Loads real model if exists, otherwise simulated model. Returns (model, is_simulated)"""
+def _load_model(model_dir: Path, target_name: str) -> tuple[Any | None, bool, str | None]:
+    """Loads real model if exists, otherwise simulated model. Returns (model, is_simulated, model_path)"""
     real_path = model_dir / f"{target_name}_model.joblib"
     if real_path.exists():
-        return joblib.load(real_path), False
+        return joblib.load(real_path), False, str(real_path)
         
     sim_path = model_dir / f"{target_name}_model_sim.joblib"
     if sim_path.exists():
-        return joblib.load(sim_path), True
+        return joblib.load(sim_path), True, str(sim_path)
         
-    return None, False
+    return None, False, None
 
 def predict_batch(batch: FermentationBatch) -> PredictionResult:
     """Predict outcomes for a new batch."""
@@ -71,15 +72,16 @@ def predict_batch(batch: FermentationBatch) -> PredictionResult:
     result = PredictionResult()
     
     # Predict acidity
-    model, is_sim = _load_model(model_dir, "acidity")
+    model, is_sim, model_path = _load_model(model_dir, "acidity")
     if model:
         result.acidity = float(model.predict(X)[0])
         if hasattr(model, 'estimators_'):
             result.acidity_ci = _get_rf_ci(model, X)
         if is_sim: result.is_simulated_prediction = True
+        result.acidity_model_path = model_path
             
     # Predict alcohol
-    model, is_sim = _load_model(model_dir, "alcohol")
+    model, is_sim, _ = _load_model(model_dir, "alcohol")
     if model:
         result.alcohol_pct = float(model.predict(X)[0])
         if hasattr(model, 'estimators_'):
@@ -87,7 +89,7 @@ def predict_batch(batch: FermentationBatch) -> PredictionResult:
         if is_sim: result.is_simulated_prediction = True
             
     # Predict off-flavor risk
-    model, is_sim = _load_model(model_dir, "off_flavor")
+    model, is_sim, _ = _load_model(model_dir, "off_flavor")
     if model:
         result.off_flavor_risk = float(model.predict_proba(X)[0, 1])
         if is_sim: result.is_simulated_prediction = True
