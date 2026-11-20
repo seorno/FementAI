@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {loadJournal,sanitiseBatch,sanitiseEntry,addEntry,savePayload} from '../src/lib/batch-journal.mjs';
+const batch={version:1,id:'batch-1',name:'Autumn cider',beverage:'cider',startedOn:'2026-11-20',stage:'planned',entries:[]};
+test('roundtrip local journal and explicit unverified recipe state',()=>{const saved=savePayload([batch]);const restored=loadJournal(JSON.parse(saved));assert.equal(restored[0].recipeStatus,'unverified');assert.equal(restored[0].name,'Autumn cider');});
+test('reject unsupported versions and invalid dates',()=>{assert.deepEqual(loadJournal({version:2,batches:[batch]}),[]);assert.equal(sanitiseBatch({...batch,startedOn:'2026-02-30'}),null);});
+test('reject malicious or impossible readings',()=>{assert.equal(sanitiseEntry({date:'2026-11-20',stage:'active',gravity:42}),null);assert.equal(sanitiseEntry({date:'2026-11-20',stage:'active',gravity:NaN}),null);});
+test('journal entries are append-only and stage updates are explicit',()=>{const entry={id:'entry-1',date:'2026-11-21',stage:'active',note:'Visible bubbles',gravity:1.04};const updated=addEntry(sanitiseBatch(batch),entry);assert.equal(updated.stage,'active');assert.equal(updated.entries.length,1);assert.equal(batch.entries.length,0);assert.throws(()=>addEntry(updated,entry));});
+test('invalid batches, duplicates and unknown fields are discarded',()=>{const b=loadJournal({version:1,batches:[{...batch,secret:'ignored'},batch,{...batch,id:'',name:'No ID'}]});assert.equal(b.length,1);assert.equal('secret' in b[0],false);});
+test('text is bounded and gravity is not converted into ABV',()=>{const b=sanitiseBatch({...batch,name:'a'.repeat(500)});assert.equal(b.name.length,90);const e=sanitiseEntry({id:'1',date:'2026-11-20',stage:'active',note:'x'.repeat(700),gravity:'1.050'});assert.equal(e.note.length,600);assert.equal(e.gravity,1.05);assert.equal('abv' in e,false);});
