@@ -43,11 +43,11 @@ export default function DesignPage() {
   }, [draft, hydrated]);
 
   if (!hydrated) {
-    return <main className="max-w-5xl mx-auto px-6 py-24 text-center text-[#68686d]" role="status">Preparing your studio…</main>;
+    return <div className="max-w-5xl mx-auto px-6 py-24 text-center text-[#68686d]" role="status">Preparing your studio…</div>;
   }
   if (!draft.adultConfirmed) {
     return (
-      <main className="max-w-xl mx-auto px-6 py-20 sm:py-32">
+      <div className="max-w-xl mx-auto px-6 py-20 sm:py-32">
         <div className={panel}>
           <p className={caption}>Ferment AI · Home studio</p>
           <h1 className="mt-5 text-4xl font-semibold tracking-[-0.05em]">For adults only.</h1>
@@ -65,7 +65,7 @@ export default function DesignPage() {
             </>
           )}
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -93,7 +93,7 @@ export default function DesignPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-16">
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-16">
       <div className="mb-9 sm:mb-12 flex flex-col md:flex-row justify-between md:items-end gap-5">
         <div>
           <p className={caption}>A flavour-first experiment</p>
@@ -204,6 +204,6 @@ export default function DesignPage() {
         {step < steps.length - 1 ? <button type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))} className="min-h-12 rounded-full bg-[#1d1d1f] text-white px-7 font-medium hover:bg-[#493943]">{step === 2 ? 'Review your direction' : 'Continue'} <span aria-hidden="true">→</span></button> : <Link href="/" className="inline-flex items-center min-h-12 rounded-full border border-[#dcd1d8] px-6 font-medium">Return to studio</Link>}
       </div>
       <p className="mt-5 text-xs text-[#777077] text-center">Preference prototype · no cloud account, recipe, model-generated ABV, or safety certification</p>
-    </main>
+    </div>
   );
 }
