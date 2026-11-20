@@ -1,0 +1,1 @@
+export const JOURNAL_KEY:string;export const STAGES:string[];export function sanitiseEntry(x:unknown):any;export function sanitiseBatch(x:unknown):any;export function loadJournal(x:unknown):any[];export function addEntry(batch:any,entry:any):any;export function savePayload(batches:any[]):string;

@@ -7,6 +7,7 @@ export default function Navbar() {
         <Link href="/" className="font-semibold tracking-tight text-xl text-[#1d1d1f]">Ferment AI<span className="text-[#84657c]">.</span></Link>
         <div className="flex gap-5 sm:gap-8 text-sm text-[#57565b]">
           <Link href="/design" className="hover:text-[#1d1d1f] focus-visible:outline focus-visible:outline-2">Design a drink</Link>
+          <Link href="/journal" className="hover:text-[#1d1d1f] focus-visible:outline focus-visible:outline-2">Batch journal</Link>
           <Link href="/predict" className="hover:text-[#1d1d1f] focus-visible:outline focus-visible:outline-2">Research lab</Link>
           <Link href="/about" className="hover:text-[#1d1d1f] focus-visible:outline focus-visible:outline-2">About</Link>
         </div>
