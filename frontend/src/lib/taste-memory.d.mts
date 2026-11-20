@@ -1,0 +1,9 @@
+export const MEMORY_KEY:string;
+export const DIMENSIONS:string[];
+export const FEEDBACK:string[];
+export function sanitiseScores(x:unknown):Record<string,number>|null;
+export function sanitiseMemory(x:unknown):any;
+export function loadMemory(raw:unknown,batchIds:string[]):any[];
+export function addMemory(entries:any[],entry:unknown,batchIds:string[]):any[];
+export function comparison(entry:any):Record<string,number>;
+export function saveMemory(entries:any[]):string;
