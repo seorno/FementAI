@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {reviewBatch} from '../src/lib/batch-insights.mjs';
+const entry=(id,date,gravity)=>({id,date,gravity});
+test('empty records never imply ABV or safety',()=>{const r=reviewBatch({entries:[]});assert.equal(r.change,null);assert.equal(r.count,0);assert.equal('abv' in r,false);assert.equal('safeToBottle' in r,false);});
+test('chronological review does not mutate stored order',()=>{const entries=[entry('b','2026-11-23',1.012),entry('a','2026-11-21',1.052)];const r=reviewBatch({entries});assert.deepEqual(r.observations.map(e=>e.id),['a','b']);assert.equal(r.change,-0.04);assert.equal(entries[0].id,'b');});
+test('same-day readings cannot establish multi-day trend',()=>{const r=reviewBatch({entries:[entry('a','2026-11-21',1.04),entry('b','2026-11-21',1.038)]});assert.equal(r.distinctDays,1);assert.ok(r.warnings.some(x=>x.includes('no multi-day trend')));});
+test('invalid and nonnumeric measurements excluded',()=>{const r=reviewBatch({entries:[entry('a','2026-02-30',1.05),entry('b','2026-11-21',NaN),entry('c','2026-11-21','1.04'),entry('d','2026-11-21',1.3),entry('e','2026-11-21',1.04)]});assert.equal(r.count,1);});
+test('increased reading flags uncertainty',()=>{const r=reviewBatch({entries:[entry('a','2026-11-21',1.01),entry('b','2026-11-23',1.04)]});assert.equal(r.change,0.03);assert.ok(r.warnings.some(x=>x.includes('increased')));});
+test('one reading has no change',()=>assert.equal(reviewBatch({entries:[entry('a','2026-11-21',1.04)]}).change,null));
+test('invalid batch rejected',()=>assert.throws(()=>reviewBatch(null),TypeError));
