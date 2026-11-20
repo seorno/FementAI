@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import TasteAtlas from '@/components/TasteAtlas';
+import FeasibilityReview from '@/components/FeasibilityReview';
 import {
   createDefaultDraft, sanitiseDraft, summariseDraft, DRAFT_STORAGE_KEY,
   OCCASIONS, SERVING, CARBONATION, INGREDIENTS, EQUIPMENT,
@@ -188,9 +189,10 @@ export default function DesignPage() {
             </dl>
             <p className="mt-6 rounded-2xl bg-[#f8f3f5] p-5 text-sm text-[#6f5365]">{summary.disclaimer}</p>
           </div>
+          <FeasibilityReview draft={draft} />
           <div className="rounded-[28px] bg-[#30242e] p-7 sm:p-9 text-white">
             <h3 className="text-2xl font-semibold tracking-tight">Your taste is saved.</h3>
-            <p className="mt-3 text-[#e2d8df] leading-relaxed">This is a working taste-design preview, not a home-brewing recipe generator yet. The next release will connect your saved direction to vetted ingredient and fermentation feasibility rules.</p>
+            <p className="mt-3 text-[#e2d8df] leading-relaxed">This is a working taste-design preview, not a home-brewing recipe generator yet. You can now check practical constraints using a conservative server screen. Source-reviewed recipes and validated sensory predictions are not yet available.</p>
             <button type="button" onClick={() => setStep(1)} className="mt-6 rounded-full bg-white px-6 py-3 text-[#30242e] font-semibold">Refine my flavour</button>
           </div>
         </section>
@@ -203,7 +205,7 @@ export default function DesignPage() {
         </div>
         {step < steps.length - 1 ? <button type="button" onClick={() => setStep(Math.min(steps.length - 1, step + 1))} className="min-h-12 rounded-full bg-[#1d1d1f] text-white px-7 font-medium hover:bg-[#493943]">{step === 2 ? 'Review your direction' : 'Continue'} <span aria-hidden="true">→</span></button> : <Link href="/" className="inline-flex items-center min-h-12 rounded-full border border-[#dcd1d8] px-6 font-medium">Return to studio</Link>}
       </div>
-      <p className="mt-5 text-xs text-[#777077] text-center">Preference prototype · no cloud account, recipe, model-generated ABV, or safety certification</p>
+      <p className="mt-5 text-xs text-[#777077] text-center">Preference prototype · server screening only on request · no cloud account, recipe, model-generated ABV, or safety certification</p>
     </div>
   );
 }
