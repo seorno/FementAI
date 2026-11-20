@@ -73,5 +73,5 @@ def test_contract_endpoint_and_legacy_routes_remain_registered():
     assert response.json()["status"] == "needs_information"
     assert response.json()["recipe"] is None
     assert client.post("/api/v1/recommendations", json={"beverage": "kombucha"}).status_code == 422
-    paths = {route.path for route in app.routes}
+    paths = {route.path for route in app.routes if hasattr(route, "path")}
     assert "/api/predict" in paths
