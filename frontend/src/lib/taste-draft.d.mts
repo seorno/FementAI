@@ -1,0 +1,21 @@
+export type SensoryKey='sweetness'|'acidity'|'bitterness'|'tannin'|'body'|'fruitIntensity'|'floral'|'spice'|'aromaIntensity';
+export type FlavourNote='orchard'|'berry'|'citrus'|'tropical'|'floral'|'spice'|'herbal'|'earthy';
+export type IngredientKey='appleJuice'|'wholeApples'|'berries'|'honey'|'sugar'|'yeast';
+export type EquipmentKey='vessel'|'airlock'|'sanitiser'|'hydrometer'|'thermometer'|'bottles';
+export type NoteStatus='neutral'|'love'|'avoid';
+export type Occasion='quiet-evening'|'dinner'|'gathering'|'gift';
+export type ServingStyle='chilled'|'over-ice'|'warm';
+export type Carbonation='still'|'light'|'sparkling';
+export interface TasteDraft{version:1;adultConfirmed:boolean;occasion:Occasion;serving:ServingStyle;carbonation:Carbonation;sensory:Record<SensoryKey,number>;notes:Record<FlavourNote,NoteStatus>;ingredients:Record<IngredientKey,boolean>;equipment:Record<EquipmentKey,boolean>;readyBy:string;volumeLitres:number;budgetGBP:number;}
+export declare const DRAFT_STORAGE_KEY:string;
+export declare const SENSORY_AXES:ReadonlyArray<{id:SensoryKey;label:string;low:string;high:string}>;
+export declare const FLAVOUR_NOTES:ReadonlyArray<{id:FlavourNote;label:string;description:string}>;
+export declare const OCCASIONS:ReadonlyArray<{id:Occasion;label:string;description:string}>;
+export declare const SERVING:ReadonlyArray<{id:ServingStyle;label:string}>;
+export declare const CARBONATION:ReadonlyArray<{id:Carbonation;label:string}>;
+export declare const INGREDIENTS:ReadonlyArray<{id:IngredientKey;label:string}>;
+export declare const EQUIPMENT:ReadonlyArray<{id:EquipmentKey;label:string}>;
+export declare function createDefaultDraft():TasteDraft;
+export declare function sanitiseDraft(raw:unknown):TasteDraft;
+export declare function cyclePreference(value:NoteStatus):NoteStatus;
+export declare function summariseDraft(d:TasteDraft):{kind:'preference_only';title:string;description:string;avoided:string[];disclaimer:string};
