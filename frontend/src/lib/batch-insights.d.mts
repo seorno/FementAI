@@ -1,0 +1,3 @@
+export type GravityObservation={id:string;date:string;gravity:number};
+export type BatchReview={observations:GravityObservation[];count:number;distinctDays:number;first:GravityObservation|null;last:GravityObservation|null;change:number|null;warnings:string[];provenance:'self_reported_descriptive_only'};
+export function reviewBatch(batch:{entries:Array<{id:string;date:string;gravity:number|null}>}):BatchReview;
