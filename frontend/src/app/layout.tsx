@@ -8,17 +8,13 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
-  title: "FermentAI",
-  description: "Microbial-driven fermentation prediction",
+  title: "Ferment AI — Design your taste",
+  description: "A flavour-first home fermentation studio in development, with a separate experimental research lab.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body className={`${inter.variable} ${jetbrains.variable} font-sans min-h-screen flex flex-col`}>
         <Navbar />
         <main className="flex-grow">{children}</main>

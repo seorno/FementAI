@@ -9,51 +9,47 @@ import { COLORS } from '@/lib/constants';
 export default function ExplorePage() {
   const [product, setProduct] = useState<ProductType>('Kombucha');
   const [networkData, setNetworkData] = useState<any>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getNetwork(product).then(setNetworkData);
+    let active = true;
+    setNetworkData(null);
+    setError(false);
+    getNetwork(product).then(data => { if (active) setNetworkData(data); })
+      .catch(() => { if (active) setError(true); });
+    return () => { active = false; };
   }, [product]);
 
   return (
     <div className="flex flex-col h-full max-w-7xl mx-auto px-4 py-8 w-full">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-4xl font-bold">Microbial Network</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <p className="text-xs tracking-widest uppercase text-amber-300 mb-2">Research lab · experimental and synthetic data</p>
+          <h1 className="text-4xl font-bold">Microbial network</h1>
         </div>
         <ProductSelector value={product} onChange={setProduct} />
       </div>
-      
-      {networkData?.data_provenance && (
-        <div className={`mb-6 p-4 rounded-lg border flex flex-col gap-1 ${
-          networkData.data_provenance === 'synthetic' ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-300' :
-          networkData.data_provenance === 'real' ? 'border-green-500/50 bg-green-500/10 text-green-300' :
-          'border-blue-500/50 bg-blue-500/10 text-blue-300'
-        }`}>
-          <div className="text-lg font-semibold">
-            {networkData.data_provenance === 'synthetic' ? '🧪 Simulated / Demo Data' :
-             networkData.data_provenance === 'real' ? '📚 Real Literature Data' : '🔬 Blended Data'}
+      {error ? (
+        <div role="alert" className="glass-card p-8 text-red-200">The research network is unavailable. No illustrative fallback has been substituted. Try again later.</div>
+      ) : !networkData ? (
+        <p role="status" className="glass-card p-8 text-gray-400">Loading network…</p>
+      ) : (
+        <>
+          <div className="mb-6 p-4 rounded-lg border border-amber-500/50 bg-amber-500/10">
+            <strong>Data provenance: {networkData.data_provenance}</strong>
+            <p className="text-sm mt-1">These exploratory associations are not validated predictions or evidence of causation. Synthetic and blended datasets are for demonstration.</p>
           </div>
-          <p className="text-sm opacity-80">
-            {networkData.data_provenance === 'synthetic' ? 'This network is built using synthetic fallback data. Train the model locally with real data to update.' :
-             networkData.data_provenance === 'real' ? 'This network is built entirely from highly curated published research datasets.' : 'This network uses a blend of published research and simulated data to ensure enough coverage.'}
-          </p>
-        </div>
+          <div className="flex-grow w-full relative min-h-[400px]">
+            <NetworkGraph data={networkData} />
+            <div className="absolute bottom-4 left-4 glass-card p-4 text-sm z-10">
+              <h4 className="font-bold mb-2">Legend</h4>
+              <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.positive }} /> Positive association</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.danger }} /> Negative association</div>
+              <p className="text-gray-400 mt-2 text-xs">Node size = abundance</p>
+            </div>
+          </div>
+        </>
       )}
-      
-      <div className="flex-grow w-full relative">
-        <NetworkGraph data={networkData} />
-        
-        <div className="absolute bottom-4 left-4 glass-card p-4 text-sm z-10">
-          <h4 className="font-bold mb-2">Legend</h4>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.positive }}></div> Positive Interaction
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.danger }}></div> Competition
-          </div>
-          <p className="text-gray-400 mt-2 text-xs">Node size = Abundance</p>
-        </div>
-      </div>
     </div>
   );
 }
