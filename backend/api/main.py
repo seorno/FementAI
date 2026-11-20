@@ -13,7 +13,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import analytics, explain, network, predict, products
+from api.routes import analytics, explain, network, predict, products, feasibility
 
 # Configure logging
 logging.basicConfig(
@@ -62,6 +62,7 @@ app.include_router(network.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(explain.router, prefix="/api")
 app.include_router(products.router, prefix="/api")
+app.include_router(feasibility.router, prefix="/api/v1")
 
 
 @app.get("/health")
