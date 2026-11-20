@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import TasteAtlas from '@/components/TasteAtlas';
 import FeasibilityReview from '@/components/FeasibilityReview';
+import {saveDesignAsPlannedBatch} from '@/lib/design-journal-handoff.mjs';
 import {
   createDefaultDraft, sanitiseDraft, summariseDraft, DRAFT_STORAGE_KEY,
   OCCASIONS, SERVING, CARBONATION, INGREDIENTS, EQUIPMENT,
@@ -23,6 +24,8 @@ export default function DesignPage() {
   const [step, setStep] = useState(0);
   const [ineligible, setIneligible] = useState(false);
   const [notice, setNotice] = useState('');
+  const [journalNotice, setJournalNotice] = useState('');
+  const [journalCategory, setJournalCategory] = useState('other');
 
   useEffect(() => {
     try {
@@ -85,6 +88,15 @@ export default function DesignPage() {
     const value = Number(input);
     if (!Number.isFinite(value)) return;
     setDraft((current) => ({ ...current, [field]: field === 'volumeLitres' ? Math.min(25, Math.max(0.25, value)) : Math.min(500, Math.max(0, value)) }));
+  }
+  function saveConcept() {
+    try {
+      const date = new Date().toLocaleDateString('en-CA');
+      saveDesignAsPlannedBatch(window.localStorage, draft, {id:window.crypto.randomUUID(),date,beverage:journalCategory});
+      setJournalNotice('Saved as an unverified planned concept in your local journal. No recipe or safety assessment was created.');
+    } catch (error) {
+      setJournalNotice(error instanceof Error ? error.message : 'Could not save the concept. Existing journal data was not changed.');
+    }
   }
   function reset() {
     if (!window.confirm('Clear your taste draft and start again?')) return;
@@ -190,6 +202,21 @@ export default function DesignPage() {
             <p className="mt-6 rounded-2xl bg-[#f8f3f5] p-5 text-sm text-[#6f5365]">{summary.disclaimer}</p>
           </div>
           <FeasibilityReview draft={draft} />
+          <section className={panel} aria-labelledby="journal-handoff-title">
+            <p className={caption}>Keep your idea</p>
+            <h3 id="journal-handoff-title" className="mt-3 text-2xl font-semibold">Save to your batch journal</h3>
+            <p className="mt-3 text-sm text-[#68686d]">Create a planned, unverified concept with a dated record of your taste intentions. This does not mean fermentation is feasible or safe. No ingredients, recipe or measurements are generated.</p>
+            <label className="mt-5 block max-w-xs text-sm font-medium">Journal category
+              <select value={journalCategory} onChange={e=>setJournalCategory(e.target.value)} className="mt-2 block w-full min-h-12 rounded-xl border border-[#d9d0d6] bg-white px-3">
+                <option value="other">Undecided / concept only</option>
+                <option value="cider">Cider</option>
+                <option value="mead">Mead</option>
+                <option value="fruit-wine">Fruit wine</option>
+              </select>
+            </label>
+            <button type="button" onClick={saveConcept} className="mt-5 min-h-12 rounded-full bg-[#1d1d1f] px-6 py-3 font-medium text-white">Save planned concept locally</button>
+            {journalNotice&&<p role="status" className="mt-4 rounded-xl bg-[#f8f1f5] p-4 text-sm">{journalNotice} <Link href="/journal" className="underline">Open journal</Link></p>}
+          </section>
           <div className="rounded-[28px] bg-[#30242e] p-7 sm:p-9 text-white">
             <h3 className="text-2xl font-semibold tracking-tight">Your taste is saved.</h3>
             <p className="mt-3 text-[#e2d8df] leading-relaxed">This is a working taste-design preview, not a home-brewing recipe generator yet. You can now check practical constraints using a conservative server screen. Source-reviewed recipes and validated sensory predictions are not yet available.</p>
