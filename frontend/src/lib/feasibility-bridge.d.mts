@@ -8,6 +8,7 @@ export interface ScreeningRequest {
 export interface ScreeningResponse {
  status:'unsupported'|'needs_information'; data_provenance:'rule_based_screen'; template_version:string;
  reasons:string[]; missing_information:string[]; safety_warnings:string[]; supporting_sources:string[];
+ cider_preparation_evidence?: {version:string;scope:string;checkpoints:string[];unresolved:string[];source_urls:string[]}|null;
  recipe:null; estimated_abv:null; safe_to_consume:null;
 }
 export function buildScreeningRequest(draft:TasteDraft,beverage?:BeverageFamily):ScreeningRequest;
