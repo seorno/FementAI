@@ -9,13 +9,13 @@ export default function Home() {
           Make something<br /><span className="text-[#806177]">that tastes like you.</span>
         </h1>
         <p className="text-lg sm:text-xl text-[#68686d] max-w-xl mt-8 leading-relaxed">
-          Start with the moment you have in mind. Explore the flavours you love. We&apos;re building a thoughtful way to turn your taste into a home-fermentation plan.
+          Start with the moment you have in mind. Explore the flavours you love. Start with the moment in mind, explore what you love, and save your personal flavour profile.
         </p>
         <div className="mt-10 flex flex-wrap gap-4 justify-center">
-          <span className="rounded-full bg-[#1d1d1f] text-white px-8 py-4 font-medium">Taste studio coming soon</span>
+          <Link href="/design" className="rounded-full bg-[#1d1d1f] text-white px-8 py-4 font-medium hover:bg-[#493943] transition-colors">Design your taste</Link>
           <Link href="/predict" className="rounded-full border border-[#d9d7d8] px-8 py-4 text-[#1d1d1f] hover:bg-white transition-colors">Explore the research lab</Link>
         </div>
-        <p className="mt-5 text-sm text-[#777]">For adults. Home fermentation of non-distilled drinks. No recipes or safety claims are available yet.</p>
+        <p className="mt-5 text-sm text-[#777]">18+ only. Flavour design is live; validated recipes and safety advice are not yet available.</p>
       </section>
       <section className="grid md:grid-cols-3 gap-5 pb-24" aria-label="The Ferment AI journey">
         {[
