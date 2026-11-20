@@ -13,6 +13,8 @@ const families: {id:BeverageFamily;label:string}[] = [
 export default function FeasibilityReview({draft}:{draft:TasteDraft}) {
  const [family,setFamily]=useState<BeverageFamily>('cider');
  const [result,setResult]=useState<ScreeningResponse|null>(null);
+ const [contamination,setContamination]=useState<'unknown'|'yes'|'no'>('unknown');
+ const [pressure,setPressure]=useState<'unknown'|'yes'|'no'>('unknown');
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
  async function check() {
@@ -20,7 +22,9 @@ export default function FeasibilityReview({draft}:{draft:TasteDraft}) {
    const controller=new AbortController();
    const timeout=setTimeout(()=>controller.abort(),12000);
    try {
-     const payload=buildScreeningRequest(draft,family);
+     const payload=buildScreeningRequest(draft,family,{
+       contamination:contamination==='yes',pressure:pressure==='yes'
+     });
      const response=await fetch(`${API_URL}/api/v1/recommendations`,{
        method:'POST',headers:{'Content-Type':'application/json'},
        body:JSON.stringify(payload),signal:controller.signal,cache:'no-store',
@@ -49,10 +53,28 @@ export default function FeasibilityReview({draft}:{draft:TasteDraft}) {
        </label>)}
      </div>
    </fieldset>
-   <button type="button" disabled={busy} onClick={check} className="mt-6 min-h-12 rounded-full bg-[#1d1d1f] px-6 py-3 font-semibold text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+   <div className="mt-6 space-y-5 rounded-2xl border border-[#e7e0e5] bg-[#faf7f9] p-5">
+     <p className="text-sm font-semibold">Safety screening — answer both questions before checking</p>
+     {([
+       {id:'contamination',label:'Do you suspect spoilage, mould or contamination in any ingredients or an existing batch?',value:contamination,set:setContamination},
+       {id:'pressure',label:'Is any vessel or bottle bulging, unexpectedly pressurised or otherwise concerning?',value:pressure,set:setPressure},
+     ] as const).map(question=><fieldset key={question.id}>
+       <legend className="text-sm leading-relaxed">{question.label}</legend>
+       <div className="mt-2 flex flex-wrap gap-4">
+         {(['yes','no','unknown'] as const).map(answer=><label key={answer} className="inline-flex min-h-11 items-center gap-2 text-sm">
+           <input type="radio" name={'screening-'+question.id} checked={question.value===answer}
+             onChange={()=>{question.set(answer);setResult(null);setError('');}} className="h-4 w-4 accent-[#6f4565]" />
+           {answer==='unknown'?'Not sure':answer==='yes'?'Yes':'No'}
+         </label>)}
+       </div>
+     </fieldset>)}
+     {(contamination==='yes'||pressure==='yes')&&<p role="alert" className="text-sm text-[#7d4336]">A reported concern will block preparation guidance. Do not taste a suspect batch or casually handle a pressurised vessel.</p>}
+     {(contamination==='unknown'||pressure==='unknown')&&<p className="text-xs text-[#805747]">If unsure, do not assume there is no hazard. Clarify the concern before requesting a screen.</p>}
+   </div>
+   <button type="button" disabled={busy||contamination==='unknown'||pressure==='unknown'} onClick={check} className="mt-6 min-h-12 rounded-full bg-[#1d1d1f] px-6 py-3 font-semibold text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
      {busy?'Checking constraints…':'Check practical constraints'}
    </button>
-   <p className="mt-3 text-xs text-[#68686d]">Only your age acknowledgement, selected inventory, requested date, carbonation and drink family are sent to the configured API when you click. Taste scores, notes, occasion and budget remain in this browser. No server-side storage is requested by this endpoint.</p>
+   <p className="mt-3 text-xs text-[#68686d]">Only your age acknowledgement, selected inventory, requested date, carbonation, drink family and explicit safety-concern answers are sent to the configured API when you click. Taste scores, notes, occasion and budget remain in this browser. No server-side storage is requested by this endpoint.</p>
    <div aria-live="polite" aria-atomic="true" className="mt-5">
      {busy&&<p role="status" className="text-sm">Contacting the screening service…</p>}
      {error&&<p role="alert" className="rounded-xl border border-[#d9b5a5] bg-[#fff6f1] p-4 text-sm text-[#7d4336]">{error}</p>}
