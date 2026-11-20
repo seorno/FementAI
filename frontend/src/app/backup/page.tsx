@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {JOURNAL_KEY,loadJournal} from '@/lib/batch-journal.mjs';
 import {MEMORY_KEY,loadMemory} from '@/lib/taste-memory.mjs';
 import {makeBackup,inspectBackup,restoreBackup} from '@/lib/studio-backup.mjs';
-type Preview={batches:unknown[];entries:unknown[];summary:{batches:number;observations:number;reflections:number;createdAt:string}};
+type Preview=ReturnType<typeof inspectBackup>;
 export default function BackupPage(){
  const [preview,setPreview]=useState<Preview|null>(null),[notice,setNotice]=useState(''),[confirm,setConfirm]=useState(false);
  function download(){
