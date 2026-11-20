@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {sanitiseScores,sanitiseMemory,loadMemory,addMemory,comparison,saveMemory,DIMENSIONS} from '../src/lib/taste-memory.mjs';
+const scores={sweetness:2,acidity:3,body:1,fruit:4,aroma:2};
+const entry={version:1,id:'t-1',batchId:'b-1',date:'2026-11-20',intent:scores,observed:{...scores,sweetness:4},nextTime:'less',notes:'Sweet finish'};
+test('roundtrip records linked to existing batch',()=>assert.equal(loadMemory(JSON.parse(saveMemory([entry])),['b-1']).length,1));
+test('orphaned records cannot appear as another batch',()=>assert.deepEqual(loadMemory(JSON.parse(saveMemory([entry])),['b-2']),[]));
+test('scores reject out of bounds, missing dimensions and fractional values',()=>{assert.equal(sanitiseScores({...scores,fruit:6}),null);assert.equal(sanitiseScores({...scores,fruit:2.5}),null);assert.equal(sanitiseScores({sweetness:2}),null);});
+test('reject invalid dates, versions and unsupported feedback',()=>{assert.equal(sanitiseMemory({...entry,date:'2026-02-30'}),null);assert.equal(sanitiseMemory({...entry,version:2}),null);assert.equal(sanitiseMemory({...entry,nextTime:'unsafe'}),null);});
+test('duplicates rejected and append-only input preserved',()=>{const a=addMemory([],entry,['b-1']);assert.equal(a.length,1);assert.throws(()=>addMemory(a,entry,['b-1']));assert.throws(()=>addMemory([],entry,['b-2']));});
+test('comparison is an ordinal self-report delta, never ABV or safety',()=>{const d=comparison(entry);assert.equal(d.sweetness,2);assert.equal(d.acidity,0);assert.equal(Object.keys(d).length,DIMENSIONS.length);assert.equal('abv' in d,false);});
+test('unknown fields removed and free text bounded',()=>{const x=sanitiseMemory({...entry,notes:'a'.repeat(900),modelPrediction:99});assert.equal(x.notes.length,600);assert.equal('modelPrediction' in x,false);});
