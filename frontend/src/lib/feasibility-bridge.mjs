@@ -11,12 +11,15 @@ const equipmentNames = Object.freeze({
   hydrometer: 'hydrometer', thermometer: 'thermometer', bottles: 'bottles',
 });
 const carbonationNames = Object.freeze({still:'still',light:'gentle',sparkling:'sparkling'});
-export function buildScreeningRequest(draft, beverage='cider') {
+export function buildScreeningRequest(draft, beverage='cider', concerns) {
   if (!draft || draft.version !== 1 || draft.adultConfirmed !== true) {
     throw new Error('An adult-confirmed version 1 draft is required.');
   }
   if (!['cider','mead','fruit_wine'].includes(beverage)) {
     throw new Error('Unsupported beverage family.');
+  }
+  if (!concerns || typeof concerns.contamination !== 'boolean' || typeof concerns.pressure !== 'boolean') {
+    throw new Error('Both safety concern questions require explicit yes/no answers.');
   }
   return {
     locale:'GB', adult_confirmed:true, beverage,
@@ -25,7 +28,7 @@ export function buildScreeningRequest(draft, beverage='cider') {
     equipment:Object.entries(equipmentNames).filter(([id])=>draft.equipment?.[id]===true).map(([,name])=>name),
     carbonation:carbonationNames[draft.carbonation] || 'still',
     wants_bottling_instructions:false,
-    contamination_concern:false, pressure_concern:false,
+    contamination_concern:concerns.contamination, pressure_concern:concerns.pressure,
   };
 }
 export function validateScreeningResponse(value) {
