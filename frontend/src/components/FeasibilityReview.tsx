@@ -67,6 +67,16 @@ export default function FeasibilityReview({draft}:{draft:TasteDraft}) {
          <h4 className="font-semibold text-sm">{group.label}</h4>
          <ul className="mt-2 list-disc pl-5 space-y-2 text-sm text-[#514b51]">{group.items.map((item,i)=><li key={i}>{item}</li>)}</ul>
        </div>)}
+       {result.cider_preparation_evidence&&<section aria-label="Source-backed cider preparation evidence" className="rounded-2xl border border-[#d8c8d2] bg-white p-5 space-y-3">
+         <h4 className="font-semibold">Cider preparation evidence · {result.cider_preparation_evidence.version}</h4>
+         <p className="text-sm text-[#68686d]">{result.cider_preparation_evidence.scope}</p>
+         <h5 className="text-sm font-semibold">Preparation checkpoints</h5>
+         <ul className="list-disc pl-5 space-y-2 text-sm">{result.cider_preparation_evidence.checkpoints.map((item,i)=><li key={i}>{item}</li>)}</ul>
+         <h5 className="text-sm font-semibold">Still unresolved</h5>
+         <ul className="list-disc pl-5 space-y-2 text-sm">{result.cider_preparation_evidence.unresolved.map((item,i)=><li key={i}>{item}</li>)}</ul>
+         <h5 className="text-sm font-semibold">Evidence sources (not a validated recipe)</h5>
+         <ul className="space-y-2">{result.cider_preparation_evidence.source_urls.map(url=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer" className="break-all text-sm underline underline-offset-4">{url}</a></li>)}</ul>
+       </section>}
        {result.supporting_sources.length>0&&<div><h4 className="font-semibold text-sm">Regulatory context (not recipe validation)</h4>
          <ul className="mt-2 space-y-2">{result.supporting_sources.filter(url=>url.startsWith('https://www.gov.uk/')||url.startsWith('https://www.asa.org.uk/')).map(url=><li key={url}><a className="break-all text-sm underline underline-offset-4" href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>)}</ul>
        </div>}

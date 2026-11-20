@@ -36,5 +36,14 @@ export function validateScreeningResponse(value) {
       value.recipe !== null || value.estimated_abv !== null || value.safe_to_consume !== null) {
     throw new Error('Unexpected screening response. No recommendation can be displayed.');
   }
+  const evidence=value.cider_preparation_evidence;
+  if (evidence !== null && evidence !== undefined && (
+      typeof evidence !== 'object' || evidence.version !== 'cider-evidence-v1' ||
+      !Array.isArray(evidence.checkpoints) || !Array.isArray(evidence.unresolved) ||
+      !Array.isArray(evidence.source_urls) ||
+      [...evidence.checkpoints,...evidence.unresolved,...evidence.source_urls].some(item=>typeof item !== 'string') ||
+      evidence.source_urls.some(url=>!url.startsWith('https://')))) {
+    throw new Error('Unexpected cider evidence. No recommendation can be displayed.');
+  }
   return value;
 }

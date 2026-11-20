@@ -9,6 +9,7 @@ from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
+from domain.cider_evidence import CiderEvidence, cider_evidence
 
 
 class FeasibilityRequest(BaseModel):
@@ -39,6 +40,7 @@ class FeasibilityResponse(BaseModel):
     missing_information: list[str]
     safety_warnings: list[str]
     supporting_sources: list[str]
+    cider_preparation_evidence: CiderEvidence | None = None
     recipe: None = None
     estimated_abv: None = None
     safe_to_consume: None = None
@@ -100,4 +102,7 @@ def assess(request: FeasibilityRequest, today: date | None = None) -> Feasibilit
         missing_information=list(dict.fromkeys(missing)),
         safety_warnings=warnings,
         supporting_sources=[SOURCE_HMRC, SOURCE_CAP],
+        cider_preparation_evidence=(cider_evidence(ingredients=request.ingredients,
+            equipment=request.equipment, carbonation=request.carbonation, blocked=blocked)
+            if request.beverage == 'cider' else None),
     )

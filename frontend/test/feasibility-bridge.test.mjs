@@ -37,3 +37,15 @@ test('rejects unrecognised or falsely feasible server responses',()=>{
  assert.throws(()=>validateScreeningResponse({...response,recipe:{steps:['bottle']}}));
  assert.throws(()=>validateScreeningResponse({...response,safe_to_consume:true}));
 });
+
+test('accepts explicitly attributed cider evidence without treating it as a recipe',()=>{
+ const evidence={version:'cider-evidence-v1',scope:'Education only',checkpoints:['Sanitise equipment'],unresolved:['No validated recipe'],source_urls:['https://extension.psu.edu/example']};
+ const validated=validateScreeningResponse({...response,cider_preparation_evidence:evidence});
+ assert.equal(validated.cider_preparation_evidence.version,'cider-evidence-v1');
+ assert.equal(validated.recipe,null);
+});
+test('rejects malformed cider evidence and insecure source links',()=>{
+ const evidence={version:'cider-evidence-v1',scope:'Education only',checkpoints:['Clean'],unresolved:['Unknown'],source_urls:['http://example.com']};
+ assert.throws(()=>validateScreeningResponse({...response,cider_preparation_evidence:evidence}));
+ assert.throws(()=>validateScreeningResponse({...response,cider_preparation_evidence:{...evidence,source_urls:['https://example.com'],checkpoints:[42]}}));
+});
