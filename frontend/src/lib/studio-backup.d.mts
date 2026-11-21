@@ -4,7 +4,9 @@ export interface StudioBackup {batches:StudioBatch[];entries:StudioMemory[];summ
 export const BACKUP_VERSION:1;
 export function makeBackup(journal:StudioBatch[],memory:StudioMemory[],createdAt?:string):string;
 export function inspectBackup(input:string):StudioBackup;
-export function restoreBackup(storage:Pick<Storage,'getItem'|'setItem'|'removeItem'>,validated:StudioBackup):StudioBackup['summary'];
+export type RestoreBaseline = Record<string,string|null>;
+export function captureRestoreBaseline(storage:Pick<Storage,'getItem'>):RestoreBaseline;
+export function restoreBackup(storage:Pick<Storage,'getItem'|'setItem'|'removeItem'>,validated:StudioBackup,expectedBaseline:RestoreBaseline):StudioBackup['summary'];
 
 export function exportStudioBackupStrict(storage:Pick<Storage,'getItem'>,createdAt?:string):string;
 export function exportRawRecovery(storage:Pick<Storage,'getItem'>,createdAt?:string):string;
