@@ -21,8 +21,8 @@ class FeasibilityRequest(BaseModel):
     equipment: list[str] = Field(default_factory=list, max_length=30)
     carbonation: Literal["still", "gentle", "sparkling"] = "still"
     wants_bottling_instructions: bool = False
-    contamination_concern: bool = False
-    pressure_concern: bool = False
+    contamination_concern: bool = Field(..., description="Explicitly answered contamination concern; omission is not equivalent to no concern")
+    pressure_concern: bool = Field(..., description="Explicitly answered vessel-pressure concern; omission is not equivalent to no concern")
 
     @model_validator(mode="after")
     def check_items(self):

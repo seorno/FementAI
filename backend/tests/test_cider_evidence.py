@@ -5,6 +5,7 @@ from domain.cider_evidence import cider_evidence, PENN_STATE, MAINE, ORCHARD
 
 def sample(**changes):
     values = dict(adult_confirmed=True, beverage="cider",
+                  contamination_concern=False, pressure_concern=False,
                   desired_date=date.today()+timedelta(days=40),
                   ingredients=["apple juice","yeast"],
                   equipment=["fermentation vessel","airlock","sanitiser","hydrometer"])

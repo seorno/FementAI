@@ -10,6 +10,7 @@ from domain.feasibility import FeasibilityRequest, assess
 def request(**overrides):
     values = dict(
         adult_confirmed=True, beverage="cider",
+        contamination_concern=False, pressure_concern=False,
         desired_date=date.today() + timedelta(days=40),
         ingredients=["apple juice", "yeast"],
         equipment=["fermentation vessel", "airlock", "sanitiser"],
@@ -66,6 +67,7 @@ def test_contract_endpoint_and_legacy_routes_remain_registered():
     client = TestClient(app)
     response = client.post("/api/v1/recommendations", json={
         "adult_confirmed": True, "beverage": "cider",
+        "contamination_concern": False, "pressure_concern": False,
         "desired_date": (date.today() + timedelta(days=40)).isoformat(),
         "ingredients": ["apple juice"], "equipment": ["fermentation vessel", "airlock", "sanitiser"]
     })
@@ -75,3 +77,34 @@ def test_contract_endpoint_and_legacy_routes_remain_registered():
     assert client.post("/api/v1/recommendations", json={"beverage": "kombucha"}).status_code == 422
     from api.routes import predict
     assert any(route.path == "/predict" for route in predict.router.routes)
+
+
+def test_direct_api_requires_both_explicit_safety_answers():
+    """A direct API client must not bypass the UI's safety questionnaire."""
+    from api.main import app
+    from fastapi.testclient import TestClient
+    client = TestClient(app)
+    payload = request().model_dump(mode="json")
+    for omitted in ("contamination_concern", "pressure_concern"):
+        partial = {key: value for key, value in payload.items() if key != omitted}
+        response = client.post("/api/v1/recommendations", json=partial)
+        assert response.status_code == 422
+    for field in ("contamination_concern", "pressure_concern"):
+        response = client.post("/api/v1/recommendations", json={**payload, field: None})
+        assert response.status_code == 422
+    assert client.post("/api/v1/recommendations", json=payload).status_code == 200
+
+
+def test_explicit_safety_concerns_block_guidance_at_api_boundary():
+    from api.main import app
+    from fastapi.testclient import TestClient
+    client = TestClient(app)
+    payload = request().model_dump(mode="json")
+    for field in ("contamination_concern", "pressure_concern"):
+        response = client.post("/api/v1/recommendations", json={**payload, field: True})
+        assert response.status_code == 200
+        result = response.json()
+        assert result["status"] == "unsupported"
+        assert result["cider_preparation_evidence"] is None
+        assert result["recipe"] is None
+        assert result["safe_to_consume"] is None
