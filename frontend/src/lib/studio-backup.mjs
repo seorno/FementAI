@@ -1,6 +1,31 @@
-import {loadJournal,validateJournalRecords,savePayload,JOURNAL_KEY} from './batch-journal.mjs';
+import {loadJournal,validateJournalRecords,readJournalStrict,savePayload,JOURNAL_KEY} from './batch-journal.mjs';
 import {loadMemory,saveMemory,MEMORY_KEY} from './taste-memory.mjs';
 export const BACKUP_VERSION=1;
+// Strict normal backup: never turn damaged stored evidence into a plausible-looking clean file.
+export function exportStudioBackupStrict(storage,createdAt=new Date().toISOString()){
+ const batches=readJournalStrict(storage);
+ const rawMemory=storage.getItem(MEMORY_KEY);
+ let entries=[];
+ if(rawMemory!==null){
+  let parsed;
+  try{parsed=JSON.parse(rawMemory);}catch{throw Error('Taste memory is unreadable; export raw recovery data instead.');}
+  if(!object(parsed)||parsed.version!==1||!Array.isArray(parsed.entries)||parsed.entries.length>300)
+   throw Error('Taste memory is unsupported; export raw recovery data instead.');
+  entries=loadMemory(parsed,batches.map(b=>b.id));
+  if(entries.length!==parsed.entries.length)
+   throw Error('Taste memory contains invalid or orphaned records; export raw recovery data instead.');
+  if(JSON.stringify(parsed.entries)!==JSON.stringify(entries))
+   throw Error('Taste memory requires a lossless migration; export raw recovery data instead.');
+ }
+ return makeBackup(batches,entries,createdAt);
+}
+// Recovery is intentionally NOT a restorable studio backup. Preserve exact stored bytes,
+// including malformed JSON, without parsing, truncating or rewriting either storage key.
+export function exportRawRecovery(storage,createdAt=new Date().toISOString()){
+ return JSON.stringify({format:'ferment-ai-raw-recovery',version:1,createdAt,
+  warning:'Unvalidated local evidence. Not a studio backup. Do not import as a recipe or safety assessment.',
+  storage:{[JOURNAL_KEY]:storage.getItem(JOURNAL_KEY),[MEMORY_KEY]:storage.getItem(MEMORY_KEY)}},null,2);
+}
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 export function makeBackup(journal,memory,createdAt=new Date().toISOString()){
  const batches=loadJournal(JSON.parse(savePayload(journal)));
