@@ -19,3 +19,8 @@ PYTHONPATH=backend pytest -q backend/tests/test_feasibility.py
 ```
 
 Next: source-review one non-distilled cider recipe family, document ingredient constraints and measured checkpoints, and only then introduce a curated versioned recipe with a `feasible` status. Integrate the Taste Atlas review into this endpoint after its branch lands, preserving explicit no-recipe states. UK scope and legal context: [HMRC](https://www.gov.uk/guidance/check-if-you-need-an-alcoholic-products-producer-approval-appa), [CAP Code section 18](https://www.asa.org.uk/type/non_broadcast/code_section/18.html). These links do not establish a recipe's food safety.
+
+
+### Explicit safety answers at the API boundary (screen-v1 contract hardening)
+
+Both `contamination_concern` and `pressure_concern` are **required booleans** in every `POST /api/v1/recommendations` request. Omission or `null` yields HTTP 422. A value of `false` represents an explicit user answer, not a server assumption; `true` blocks educational preparation evidence. The Taste Atlas UI already requires both answers before submission. This prevents direct API clients from silently bypassing the UI-only safeguard. Neither answer is a safety certification; uncertainty should be resolved before screening. This is a breaking validation change for clients that previously omitted the two fields. No recipe, ABV or consumption-safety conclusion is returned.
