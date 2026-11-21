@@ -1,5 +1,5 @@
 import {sanitiseDraft, summariseDraft, OCCASIONS, SERVING, CARBONATION, FLAVOUR_NOTES} from './taste-draft.mjs';
-import {JOURNAL_KEY,loadJournal,savePayload} from './batch-journal.mjs';
+import {JOURNAL_KEY,validateJournalRecords,savePayload} from './batch-journal.mjs';
 
 const isoDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value+'T00:00:00Z'));
 export function makePlannedBatch(draft, {id, date, beverage='other'}={}) {
@@ -27,8 +27,7 @@ export function saveDesignAsPlannedBatch(storage,draft,{id,date,beverage='other'
  if(raw!==null){
   let parsed;try{parsed=JSON.parse(raw);}catch{throw Error('Existing journal is unreadable; nothing was overwritten.');}
   if(parsed?.version!==1||!Array.isArray(parsed.batches))throw Error('Existing journal version unsupported; nothing was overwritten.');
-  batches=loadJournal(parsed);
-  if(batches.length!==parsed.batches.length)throw Error('Existing journal contains invalid batches; nothing was overwritten.');
+  batches=validateJournalRecords(parsed);
  }
  if(batches.length>=100)throw Error('Journal is full; export a backup before adding records.');
  if(batches.some(x=>x.id===batch.id))throw Error('This concept has already been saved.');

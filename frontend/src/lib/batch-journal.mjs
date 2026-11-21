@@ -28,7 +28,32 @@ export function addEntry(batch, entry) {
  if (batch.entries.length>=300) throw new Error('Journal limit reached');
  return {...batch,stage:clean.stage,entries:[...batch.entries,clean]};
 }
-export function savePayload(batches){return JSON.stringify({version:1,batches:batches.map(sanitiseBatch).filter(Boolean)});}
+export function validateJournalRecords(raw) {
+ if (!isObject(raw) || raw.version !== 1 || !Array.isArray(raw.batches) || raw.batches.length > 100)
+  throw Error('Unsupported or oversized journal; no changes were made.');
+ const batches = loadJournal(raw);
+ if (batches.length !== raw.batches.length)
+  throw Error('Journal contains invalid or duplicate batches; no changes were made.');
+ for (let i = 0; i < raw.batches.length; i++) {
+  const original = raw.batches[i], restored = batches[i];
+  if (!Array.isArray(original.entries) || original.entries.length > 300 ||
+      original.entries.length !== restored.entries.length ||
+      !STAGES.includes(original.stage))
+   throw Error('Journal contains invalid or oversized observations; no changes were made.');
+  const ids = new Set();
+  for (const entry of original.entries) {
+   const clean = sanitiseEntry(entry);
+   if (!clean || !clean.id || ids.has(clean.id) || clean.id !== entry.id)
+    throw Error('Journal contains invalid or duplicate observations; no changes were made.');
+   ids.add(clean.id);
+  }
+ }
+ return batches;
+}
+export function savePayload(batches) {
+ const validated = validateJournalRecords({version:1,batches});
+ return JSON.stringify({version:1,batches:validated});
+}
 
 export function readJournalStrict(storage) {
  const raw=storage.getItem(JOURNAL_KEY);
@@ -36,9 +61,7 @@ export function readJournalStrict(storage) {
  let parsed;
  try{parsed=JSON.parse(raw);}catch{throw Error('Saved journal is unreadable; no changes were made.');}
  if(parsed?.version!==1||!Array.isArray(parsed.batches))throw Error('Unsupported journal version; no changes were made.');
- const batches=loadJournal(parsed);
- if(batches.length!==parsed.batches.length)throw Error('Saved journal contains invalid records; no changes were made.');
- return batches;
+ return validateJournalRecords(parsed);
 }
 // Always re-read storage at the moment of the action, never commit a stale React snapshot.
 // This avoids sequential lost updates but is not a cross-tab transaction.
