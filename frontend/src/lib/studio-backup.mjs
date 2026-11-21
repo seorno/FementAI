@@ -44,8 +44,15 @@ export function inspectBackup(input){
  for(const b of data.journal.batches){const restored=batches.find(x=>x.id===b.id);if(!restored||!Array.isArray(b.entries)||restored.entries.length!==b.entries.length||b.entries.some(e=>!e.id||!restored.entries.some(y=>y.id===e.id)))throw Error('Backup contains invalid journal observations');}
  return {batches,entries,summary:{batches:batches.length,observations:batches.reduce((n,b)=>n+b.entries.length,0),reflections:entries.length,createdAt:typeof data.createdAt==='string'?data.createdAt:'unknown'}};
 }
-export function restoreBackup(storage,validated){
+export function captureRestoreBaseline(storage){
+ return {[JOURNAL_KEY]:storage.getItem(JOURNAL_KEY),[MEMORY_KEY]:storage.getItem(MEMORY_KEY)};
+}
+export function restoreBackup(storage,validated,expectedBaseline){
  const oldJournal=storage.getItem(JOURNAL_KEY),oldMemory=storage.getItem(MEMORY_KEY);
+ // A file may be inspected while another tab edits the journal. Refuse a stale
+ // restore preview rather than silently replacing those newer observations.
+ if (!expectedBaseline || oldJournal!==expectedBaseline[JOURNAL_KEY] || oldMemory!==expectedBaseline[MEMORY_KEY])
+  throw Error('Local records changed since backup inspection. Re-select the backup before restoring; no changes were made.');
  const journal=savePayload(validated.batches),memory=saveMemory(validated.entries);
  try{storage.setItem(JOURNAL_KEY,journal);storage.setItem(MEMORY_KEY,memory);}
  catch(error){
