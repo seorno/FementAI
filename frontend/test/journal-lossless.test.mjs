@@ -79,7 +79,9 @@ for (const [label,record] of lossyCases) {
 test('valid null-gravity and unmodified notes survive strict export',()=>{
  const record=batch([{...observation(),gravity:null,note:'Measured at room temperature'}]);
  const s=storage(journal([record]));
- assert.deepEqual(readJournalStrict(s),[record]);
- assert.deepEqual(JSON.parse(savePayload([record])).batches,[record]);
+ const expected={...record,recipeStatus:'unverified'};
+ assert.deepEqual(readJournalStrict(s),[expected]);
+ assert.deepEqual(JSON.parse(savePayload([record])).batches,[expected]);
+ assert.deepEqual(expected.entries,record.entries);
  assert.equal(s.writes,0);
 });
