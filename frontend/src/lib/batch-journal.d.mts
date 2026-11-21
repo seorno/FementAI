@@ -2,7 +2,7 @@ export const JOURNAL_KEY:string;
 export const STAGES:string[];
 export type JournalStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export type JournalEntry = {id:string;date:string;stage:string;note:string;gravity:number|null};
-export type JournalBatch = {version:number;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:JournalEntry[];recipeStatus:string};
+export type JournalBatch = {version:1;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:JournalEntry[];recipeStatus:string};
 export function sanitiseEntry(x:unknown):JournalEntry|null;
 export function sanitiseBatch(x:unknown):JournalBatch|null;
 export function loadJournal(x:unknown):JournalBatch[];
