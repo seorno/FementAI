@@ -40,11 +40,25 @@ export function validateJournalRecords(raw) {
       original.entries.length !== restored.entries.length ||
       !STAGES.includes(original.stage))
    throw Error('Journal contains invalid or oversized observations; no changes were made.');
+  // A strict read must not normalise historical evidence. Trimming notes,
+  // truncating labels, or coercing gravity would rewrite the user's record.
+  // Keep legacy malformed data untouched until an explicit migration/export.
+  if (!restored || original.id !== restored.id ||
+      original.name !== restored.name ||
+      original.beverage !== restored.beverage ||
+      original.startedOn !== restored.startedOn ||
+      original.stage !== restored.stage)
+   throw Error('Journal contains fields requiring a lossless migration; no changes were made.');
   const ids = new Set();
-  for (const entry of original.entries) {
-   const clean = sanitiseEntry(entry);
-   if (!clean || !clean.id || ids.has(clean.id) || clean.id !== entry.id)
-    throw Error('Journal contains invalid or duplicate observations; no changes were made.');
+  for (let j = 0; j < original.entries.length; j++) {
+   const entry = original.entries[j], clean = sanitiseEntry(entry);
+   if (!clean || !clean.id || ids.has(clean.id) ||
+       entry.id !== clean.id ||
+       entry.date !== clean.date ||
+       entry.stage !== clean.stage ||
+       entry.note !== clean.note ||
+       entry.gravity !== clean.gravity)
+    throw Error('Journal contains observations requiring a lossless migration; no changes were made.');
    ids.add(clean.id);
   }
  }

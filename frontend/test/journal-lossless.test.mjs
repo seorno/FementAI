@@ -48,3 +48,40 @@ test('design handoff refuses damaged existing journal without writing',()=>{
  assert.throws(()=>saveDesignAsPlannedBatch(s,{version:1,adultConfirmed:true},{id:'new',date:'2026-11-21'}));
  assert.equal(s.writes,0);
 });
+
+const lossyCases = [
+ ['trimmed batch name',{...batch(),name:'  Cider  '}],
+ ['truncated batch name',{...batch(),name:'C'.repeat(91)}],
+ ['trimmed batch id',{...batch(),id:' batch-1 '}],
+ ['truncated batch id',{...batch(),id:'b'.repeat(81)}],
+ ['trimmed observation note',batch([{...observation(),note:'  Measured  '}])],
+ ['truncated observation note',batch([{...observation(),note:'n'.repeat(601)}])],
+ ['numeric string gravity',batch([{...observation(),gravity:'1.04'}])],
+ ['empty string gravity',batch([{...observation(),gravity:''}])],
+ ['trimmed observation id',batch([{...observation(),id:' obs-1 '}])],
+ ['truncated observation id',batch([{...observation(),id:'o'.repeat(81)}])],
+];
+for (const [label,record] of lossyCases) {
+ test('strict journal preserves original evidence by rejecting '+label,()=>{
+  const original=JSON.stringify(journal([record]));
+  const s=storage(journal([record]));
+  assert.throws(()=>readJournalStrict(s),/lossless migration/);
+  assert.throws(()=>mutateJournal(s,records=>records),/lossless migration/);
+  assert.throws(()=>savePayload([record]),/lossless migration/);
+  assert.equal(s.writes,0);
+  assert.equal(s.getItem(JOURNAL_KEY),original);
+ });
+ test('backup refuses evidence-changing import: '+label,()=>{
+  const input=JSON.stringify({format:'ferment-ai-studio',version:1,createdAt:'2026-11-21T00:00:00Z',journal:journal([record]),memory:{version:1,entries:[]}});
+  assert.throws(()=>inspectBackup(input),/lossless migration/);
+ });
+}
+test('valid null-gravity and unmodified notes survive strict export',()=>{
+ const record=batch([{...observation(),gravity:null,note:'Measured at room temperature'}]);
+ const s=storage(journal([record]));
+ const expected={...record,recipeStatus:'unverified'};
+ assert.deepEqual(readJournalStrict(s),[expected]);
+ assert.deepEqual(JSON.parse(savePayload([record])).batches,[expected]);
+ assert.deepEqual(expected.entries,record.entries);
+ assert.equal(s.writes,0);
+});
