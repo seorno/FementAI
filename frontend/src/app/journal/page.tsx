@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
-import {JOURNAL_KEY,STAGES,loadJournal,savePayload,addEntry} from '@/lib/batch-journal.mjs';
+import {JOURNAL_KEY,STAGES,readJournalStrict,mutateJournal,savePayload,addEntry} from '@/lib/batch-journal.mjs';
 type Entry={id:string;date:string;stage:string;note:string;gravity:number|null};
 type Batch={version:number;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:Entry[];recipeStatus:string};
 const input='w-full rounded-xl border border-[#d9d0d6] bg-white p-3 text-[#30252d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#77566e]';
@@ -9,17 +9,31 @@ const today=()=>new Date().toLocaleDateString('en-CA');
 export default function JournalPage(){
  const [batches,setBatches]=useState<Batch[]>([]),[ready,setReady]=useState(false),[notice,setNotice]=useState('');
  const [name,setName]=useState(''),[beverage,setBeverage]=useState('cider'),[selected,setSelected]=useState(''),[stage,setStage]=useState('active'),[note,setNote]=useState(''),[gravity,setGravity]=useState('');
- useEffect(()=>{try{const raw=localStorage.getItem(JOURNAL_KEY);if(raw)setBatches(loadJournal(JSON.parse(raw)));}catch{setNotice('Saved journal could not be read. Existing browser data was not overwritten.');}finally{setReady(true);}},[]);
- useEffect(()=>{if(!ready)return;try{localStorage.setItem(JOURNAL_KEY,savePayload(batches));}catch{setNotice('Could not save in this browser. Export or copy your notes before leaving.');}},[batches,ready]);
+ useEffect(()=>{
+  try{setBatches(readJournalStrict(localStorage));}
+  catch{setNotice('Saved journal could not be read. Existing browser data was not overwritten.');}
+  finally{setReady(true);}
+  const sync=(event:StorageEvent)=>{
+   if(event.key!==JOURNAL_KEY&&event.key!==null)return;
+   try{setBatches(readJournalStrict(localStorage));setNotice('Journal updated from another tab.');}
+   catch{setNotice('Another tab changed the journal to unreadable data. No changes were made.');}
+  };
+  window.addEventListener('storage',sync);
+  return ()=>window.removeEventListener('storage',sync);
+ },[]);
+ function commit(change:(current:Batch[])=>Batch[]){
+  try{const latest=mutateJournal(localStorage,change);setBatches(latest);return true;}
+  catch(error){setNotice(error instanceof Error?error.message:'Could not save. Existing data was preserved.');return false;}
+ }
  const active=batches.find(b=>b.id===selected);
- function create(e:React.FormEvent){e.preventDefault();if(!name.trim()||batches.length>=100)return;const id=crypto.randomUUID();const b:Batch={version:1,id,name:name.trim().slice(0,90),beverage,startedOn:today(),stage:'planned',entries:[],recipeStatus:'unverified'};setBatches(v=>[b,...v]);setSelected(id);setName('');}
- function record(e:React.FormEvent){e.preventDefault();if(!active||!note.trim())return;try{const entry={id:crypto.randomUUID(),date:today(),stage,note:note.trim(),gravity:gravity.trim()===''?null:Number(gravity)};setBatches(v=>v.map(b=>b.id===active.id?addEntry(b,entry):b));setNote('');setGravity('');setNotice('Entry saved locally.');}catch{setNotice('Check the entry and gravity (0.900–1.200) before saving.');}}
- function exportJournal(){const blob=new Blob([savePayload(batches)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ferment-ai-journal.json';a.click();URL.revokeObjectURL(url);}
+ function create(e:React.FormEvent){e.preventDefault();if(!name.trim()||batches.length>=100)return;const id=crypto.randomUUID();const b:Batch={version:1,id,name:name.trim().slice(0,90),beverage,startedOn:today(),stage:'planned',entries:[],recipeStatus:'unverified'};if(!commit(v=>[b,...v]))return;setSelected(id);setName('');}
+ function record(e:React.FormEvent){e.preventDefault();if(!active||!note.trim())return;try{const entry={id:crypto.randomUUID(),date:today(),stage,note:note.trim(),gravity:gravity.trim()===''?null:Number(gravity)};if(!commit(v=>{if(!v.some(b=>b.id===active.id))throw Error('Batch was removed in another tab.');return v.map(b=>b.id===active.id?addEntry(b,entry):b);}))return;setNote('');setGravity('');setNotice('Entry saved locally.');}catch{setNotice('Check the entry and gravity (0.900–1.200) before saving.');}}
+ function exportJournal(){try{const blob=new Blob([savePayload(readJournalStrict(localStorage))],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ferment-ai-journal.json';a.click();URL.revokeObjectURL(url);}catch{setNotice('Cannot export unreadable journal data. No changes were made.');}}
  if(!ready)return <p className="mx-auto max-w-5xl p-10" role="status">Opening your journal…</p>;
  return <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#806177]">Your private studio</p><h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-6xl">Batch journal.</h1>
  <p className="mt-4 max-w-2xl text-[#68686d]">Keep dated observations and measurements as they happen. Records are self-reported, not independently verified or interpreted as proof of fermentation safety.</p>
- <p className="mt-3 text-sm text-[#76546b]">Local to this browser only. Clearing browser data may erase your journal. No account sync or backup is provided.</p>
+ <p className="mt-3 text-sm text-[#76546b]">Local to this browser only. Clearing browser data may erase your journal. No account sync is provided; export a backup regularly.</p>
  {notice&&<p role="status" className="mt-5 rounded-xl bg-[#f8f1f5] p-4">{notice}</p>}
  <div className="mt-8 flex flex-wrap gap-3"><Link href="/journal/insights" className="rounded-full border border-[#c9b8c3] px-5 py-3 font-medium">Review gravity observations</Link><Link href="/journal/packaging" className="rounded-full border border-[#c9b8c3] px-5 py-3 font-medium">Review packaging evidence</Link><Link href="/backup" className="rounded-full border border-[#c9b8c3] px-5 py-3 font-medium">Studio backup &amp; restore</Link><button type="button" onClick={exportJournal} className="rounded-full border border-[#c9b8c3] px-5 py-3 font-medium">Export JSON backup</button></div>
  <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.5fr]">
