@@ -3,7 +3,7 @@ import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {JOURNAL_KEY,STAGES,readJournalStrict,mutateJournal,savePayload,addEntry} from '@/lib/batch-journal.mjs';
 type Entry={id:string;date:string;stage:string;note:string;gravity:number|null};
-type Batch={version:number;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:Entry[];recipeStatus:string};
+type Batch={version:1;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:Entry[];recipeStatus:string};
 const input='w-full rounded-xl border border-[#d9d0d6] bg-white p-3 text-[#30252d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#77566e]';
 const today=()=>new Date().toLocaleDateString('en-CA');
 export default function JournalPage(){
