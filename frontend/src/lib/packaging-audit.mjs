@@ -17,7 +17,7 @@ export function normaliseAnswers(value) {
 export function reviewPackagingEvidence(batch, answers={}) {
   if (!batch || typeof batch!=='object' || !Array.isArray(batch.entries)) throw new Error('Select a valid journal batch');
   const answersClean=normaliseAnswers(answers);
-  const measurements=batch.entries.filter(e=>e && typeof e.gravity==='number' && Number.isFinite(e.gravity) && e.gravity>=0.9 && e.gravity<=1.2 && /^\\d{4}-\\d{2}-\\d{2}$/.test(e.date));
+  const measurements=batch.entries.filter(e=>e && typeof e.gravity==='number' && Number.isFinite(e.gravity) && e.gravity>=0.9 && e.gravity<=1.2 && /^\d{4}-\d{2}-\d{2}$/.test(e.date));
   const days=new Set(measurements.map(e=>e.date)).size;
   const concerns=QUESTIONS.filter(q=>answersClean[q.id]==='concern').map(q=>q.id);
   const gaps=QUESTIONS.filter(q=>answersClean[q.id]!=='documented').map(q=>q.id);
