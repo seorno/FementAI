@@ -1,4 +1,4 @@
-import {loadJournal,savePayload,JOURNAL_KEY} from './batch-journal.mjs';
+import {loadJournal,validateJournalRecords,savePayload,JOURNAL_KEY} from './batch-journal.mjs';
 import {loadMemory,saveMemory,MEMORY_KEY} from './taste-memory.mjs';
 export const BACKUP_VERSION=1;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -12,7 +12,7 @@ export function inspectBackup(input){
  let data;try{data=JSON.parse(input);}catch{throw Error('Not valid JSON');}
  if(!object(data)||data.format!=='ferment-ai-studio'||data.version!==1||!object(data.journal)||!object(data.memory)||!Array.isArray(data.journal.batches)||!Array.isArray(data.memory.entries)||data.journal.version!==1||data.memory.version!==1)throw Error('Unsupported or incomplete studio backup');
  if(data.journal.batches.length>100||data.memory.entries.length>300)throw Error('Backup exceeds storage limits');
- const batches=loadJournal(data.journal);
+ const batches=validateJournalRecords(data.journal);
  const entries=loadMemory(data.memory,batches.map(b=>b.id));
  // Reject rather than silently dropping invalid, duplicate or orphaned records.
  if(batches.length!==data.journal.batches.length||entries.length!==data.memory.entries.length)throw Error('Backup contains invalid, duplicate or orphaned records');
