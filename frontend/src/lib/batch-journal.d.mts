@@ -1,1 +1,12 @@
-export const JOURNAL_KEY:string;export const STAGES:string[];export function sanitiseEntry(x:unknown):any;export function sanitiseBatch(x:unknown):any;export function loadJournal(x:unknown):any[];export function addEntry(batch:any,entry:any):any;export function savePayload(batches:any[]):string;
+export const JOURNAL_KEY:string;
+export const STAGES:string[];
+export type JournalStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type JournalEntry = {id:string;date:string;stage:string;note:string;gravity:number|null};
+export type JournalBatch = {version:1;id:string;name:string;beverage:string;startedOn:string;stage:string;entries:JournalEntry[];recipeStatus:string};
+export function sanitiseEntry(x:unknown):JournalEntry|null;
+export function sanitiseBatch(x:unknown):JournalBatch|null;
+export function loadJournal(x:unknown):JournalBatch[];
+export function addEntry(batch:JournalBatch,entry:unknown):JournalBatch;
+export function savePayload(batches:JournalBatch[]):string;
+export function readJournalStrict(storage:JournalStorage):JournalBatch[];
+export function mutateJournal(storage:JournalStorage,mutation:(current:JournalBatch[])=>JournalBatch[]):JournalBatch[];
