@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {QUESTIONS,normaliseAnswers,reviewPackagingEvidence} from '../src/lib/packaging-audit.mjs';
+const batch=(entries=[],extra={})=>({stage:'active',recipeStatus:'unverified',entries,...extra});
+test('unknown is the default for all questions',()=>{const x=normaliseAnswers({pressure:'documented',extra:'documented'});assert.equal(Object.keys(x).length,QUESTIONS.length);assert.equal(x.pressure,'documented');assert.equal(x.protocol,'unknown');assert.equal(x.extra,undefined)});
+test('rejects invalid statuses and inherited values',()=>{const x=normaliseAnswers({pressure:'yes',protocol:null});assert.equal(x.pressure,'unknown');assert.equal(x.protocol,'unknown')});
+test('no measurements means no inferred stability or clearance',()=>{const r=reviewPackagingEvidence(batch());assert.equal(r.measurementDays,0);assert.equal(r.canPackage,false);assert.equal(r.safeToConsume,null);assert.equal(r.decision,'not_assessed')});
+test('counts dates, not duplicate same-day readings',()=>{const r=reviewPackagingEvidence(batch([{date:'2026-11-01',gravity:1.02},{date:'2026-11-01',gravity:1.01},{date:'2026-11-03',gravity:1.01}]));assert.equal(r.measurementCount,3);assert.equal(r.measurementDays,2);assert.equal(r.canPackage,false)});
+test('invalid measurements are ignored',()=>{const r=reviewPackagingEvidence(batch([{date:'2026-11-01',gravity:NaN},{date:'bad',gravity:1.01},{date:'2026-11-02',gravity:1.5}]));assert.equal(r.measurementCount,0)});
+test('documented answers never certify packaging or drinking',()=>{const answers=Object.fromEntries(QUESTIONS.map(q=>[q.id,'documented']));const r=reviewPackagingEvidence(batch([{date:'2026-11-01',gravity:1.02},{date:'2026-11-03',gravity:1.02}],{recipeStatus:'verified'}),answers);assert.deepEqual(r.gaps,[]);assert.equal(r.canPackage,false);assert.equal(r.safeToConsume,null)});
+test('reported concerns are explicit',()=>{const r=reviewPackagingEvidence(batch([],{stage:'discarded'}),{contamination:'concern'});assert.deepEqual(r.concerns,['contamination']);assert.ok(r.warnings.some(w=>w.includes('discarded')));assert.equal(r.canPackage,false)});
+test('malformed batch fails rather than returning clearance',()=>assert.throws(()=>reviewPackagingEvidence({}),/valid journal batch/));
