@@ -29,3 +29,25 @@ export function addEntry(batch, entry) {
  return {...batch,stage:clean.stage,entries:[...batch.entries,clean]};
 }
 export function savePayload(batches){return JSON.stringify({version:1,batches:batches.map(sanitiseBatch).filter(Boolean)});}
+
+export function readJournalStrict(storage) {
+ const raw=storage.getItem(JOURNAL_KEY);
+ if(raw===null)return [];
+ let parsed;
+ try{parsed=JSON.parse(raw);}catch{throw Error('Saved journal is unreadable; no changes were made.');}
+ if(parsed?.version!==1||!Array.isArray(parsed.batches))throw Error('Unsupported journal version; no changes were made.');
+ const batches=loadJournal(parsed);
+ if(batches.length!==parsed.batches.length)throw Error('Saved journal contains invalid records; no changes were made.');
+ return batches;
+}
+// Always re-read storage at the moment of the action, never commit a stale React snapshot.
+// This avoids sequential lost updates but is not a cross-tab transaction.
+export function mutateJournal(storage,mutation) {
+ const current=readJournalStrict(storage);
+ const next=mutation(current);
+ if(!Array.isArray(next)||next.length>100)throw Error('Journal limit or invalid update.');
+ const payload=savePayload(next);
+ if(loadJournal(JSON.parse(payload)).length!==next.length)throw Error('Invalid journal update.');
+ storage.setItem(JOURNAL_KEY,payload);
+ return loadJournal(JSON.parse(payload));
+}
