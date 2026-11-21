@@ -1,10 +1,10 @@
 'use client';
 import {useState} from 'react';
 import Link from 'next/link';
-import {exportStudioBackupStrict,exportRawRecovery,inspectBackup,restoreBackup} from '@/lib/studio-backup.mjs';
+import {exportStudioBackupStrict,exportRawRecovery,inspectBackup,restoreBackup,captureRestoreBaseline} from '@/lib/studio-backup.mjs';
 type Preview=ReturnType<typeof inspectBackup>;
 export default function BackupPage(){
- const [preview,setPreview]=useState<Preview|null>(null),[notice,setNotice]=useState(''),[confirm,setConfirm]=useState(false);
+ const [preview,setPreview]=useState<Preview|null>(null),[baseline,setBaseline]=useState<ReturnType<typeof captureRestoreBaseline>|null>(null),[notice,setNotice]=useState(''),[confirm,setConfirm]=useState(false);
  function saveFile(content:string,filename:string){
   const blob=new Blob([content],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -19,15 +19,15 @@ export default function BackupPage(){
   catch{setNotice('Raw recovery export failed. Browser data was not changed.');}
  }
  async function select(e:React.ChangeEvent<HTMLInputElement>){
-  setPreview(null);setConfirm(false);setNotice('');
+  setPreview(null);setBaseline(null);setConfirm(false);setNotice('');
   const file=e.target.files?.[0];if(!file)return;
   if(file.size>2_000_000){setNotice('File exceeds the 2 MB limit.');return;}
-  try{setPreview(inspectBackup(await file.text()));}
+  try{const baselineAtSelection=captureRestoreBaseline(localStorage);const validated=inspectBackup(await file.text());if(JSON.stringify(baselineAtSelection)!==JSON.stringify(captureRestoreBaseline(localStorage)))throw Error('Local records changed during inspection. Select the backup again.');setBaseline(baselineAtSelection);setPreview(validated);}
   catch(err){setNotice(err instanceof Error?err.message:'Could not inspect backup.');}
  }
  function restore(){
-  if(!preview||!confirm)return;
-  try{restoreBackup(localStorage,preview);setPreview(null);setConfirm(false);setNotice('Restore complete. Reopen Journal or Taste Memory to see the restored records.');}
+  if(!preview||!confirm||!baseline)return;
+  try{restoreBackup(localStorage,preview,baseline);setPreview(null);setBaseline(null);setConfirm(false);setNotice('Restore complete. Reopen Journal or Taste Memory to see the restored records.');}
   catch(err){setNotice(err instanceof Error?err.message:'Restore failed.');}
  }
  return <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8">
