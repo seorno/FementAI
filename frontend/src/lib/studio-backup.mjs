@@ -41,6 +41,10 @@ export function inspectBackup(input){
  const entries=loadMemory(data.memory,batches.map(b=>b.id));
  // Reject rather than silently dropping invalid, duplicate or orphaned records.
  if(batches.length!==data.journal.batches.length||entries.length!==data.memory.entries.length)throw Error('Backup contains invalid, duplicate or orphaned records');
+ // A backup is an evidence archive: normalisation must never silently change a reflection.
+ // Match the strict on-device memory contract, including trimmed text and score fields.
+ if(JSON.stringify(entries)!==JSON.stringify(data.memory.entries))
+  throw Error('Backup contains non-canonical taste reflections; preserve the original file and export raw recovery data.');
  for(const b of data.journal.batches){const restored=batches.find(x=>x.id===b.id);if(!restored||!Array.isArray(b.entries)||restored.entries.length!==b.entries.length||b.entries.some(e=>!e.id||!restored.entries.some(y=>y.id===e.id)))throw Error('Backup contains invalid journal observations');}
  return {batches,entries,summary:{batches:batches.length,observations:batches.reduce((n,b)=>n+b.entries.length,0),reflections:entries.length,createdAt:typeof data.createdAt==='string'?data.createdAt:'unknown'}};
 }
