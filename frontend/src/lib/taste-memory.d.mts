@@ -7,3 +7,5 @@ export function loadMemory(raw:unknown,batchIds:string[]):any[];
 export function addMemory(entries:any[],entry:unknown,batchIds:string[]):any[];
 export function comparison(entry:any):Record<string,number>;
 export function saveMemory(entries:any[]):string;
+export function readMemoryStrict(storage:Pick<Storage,'getItem'>,batchIds:string[]):any[];
+export function recordMemory(storage:Pick<Storage,'getItem'|'setItem'>,entry:unknown,batchIds:string[]):any[];
