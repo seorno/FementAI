@@ -14,3 +14,24 @@ test('rejects invalid observations rather than silently discarding',()=>{const x
 test('restores both stores after validation',()=>{const m=new Map();const storage={getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)};restoreBackup(storage,inspectBackup(backup()),captureRestoreBaseline(storage));assert.equal(JSON.parse(m.get(JOURNAL_KEY)).batches.length,1);assert.equal(JSON.parse(m.get(MEMORY_KEY)).entries.length,1);});
 test('rolls back both stores when second write fails',()=>{const m=new Map([[JOURNAL_KEY,'old-journal'],[MEMORY_KEY,'old-memory']]);let fail=true;const storage={getItem:k=>m.get(k)??null,setItem:(k,v)=>{if(k===MEMORY_KEY&&fail){fail=false;throw Error('quota');}m.set(k,v);},removeItem:k=>m.delete(k)};assert.throws(()=>restoreBackup(storage,inspectBackup(backup()),captureRestoreBaseline(storage)),/previous/);assert.equal(m.get(JOURNAL_KEY),'old-journal');assert.equal(m.get(MEMORY_KEY),'old-memory');});
 test('never treats backup contents as verified safety or ABV',()=>{const x=inspectBackup(backup());assert.equal(x.batches[0].recipeStatus,'unverified');assert.equal('abv' in x.batches[0],false);});
+
+test('rejects non-canonical reflection fields without silently rewriting backup evidence',()=>{
+ for(const change of [
+  entry=>{entry.notes='  padded note  ';},
+  entry=>{entry.id=' m1 ';},
+  entry=>{entry.intent.extra=1;},
+  entry=>{entry.observed.sweetness='2';},
+  entry=>{entry.extra='unknown field';}
+ ]){
+  const file=JSON.parse(backup());
+  change(file.memory.entries[0]);
+  assert.throws(()=>inspectBackup(JSON.stringify(file)),/non-canonical|invalid/);
+ }
+});
+test('a rejected non-canonical backup cannot alter existing local evidence',()=>{
+ const file=JSON.parse(backup());file.memory.entries[0].notes='  altered  ';
+ const m=new Map([[JOURNAL_KEY,'original-journal'],[MEMORY_KEY,'original-memory']]);
+ assert.throws(()=>inspectBackup(JSON.stringify(file)),/non-canonical/);
+ assert.equal(m.get(JOURNAL_KEY),'original-journal');
+ assert.equal(m.get(MEMORY_KEY),'original-memory');
+});
