@@ -37,3 +37,24 @@ export function comparison(entry) {
 export function saveMemory(entries) {
  return JSON.stringify({version:1,entries:entries.map(sanitiseMemory).filter(Boolean)});
 }
+
+/** Read without normalising or silently discarding existing reflections. */
+export function readMemoryStrict(storage,batchIds){
+ const raw=storage.getItem(MEMORY_KEY);
+ if(raw===null)return [];
+ let parsed;
+ try{parsed=JSON.parse(raw);}catch{throw Error('Taste memory is unreadable; preserve raw recovery data before editing.');}
+ if(!object(parsed)||parsed.version!==1||!Array.isArray(parsed.entries)||parsed.entries.length>300)
+  throw Error('Unsupported taste memory; preserve raw recovery data before editing.');
+ const entries=loadMemory(parsed,batchIds);
+ if(entries.length!==parsed.entries.length||JSON.stringify(entries)!==JSON.stringify(parsed.entries))
+  throw Error('Taste memory contains invalid, orphaned or non-canonical evidence; preserve raw recovery data before editing.');
+ return entries;
+}
+/** Commit before updating React state. Never autosave a stale component snapshot. */
+export function recordMemory(storage,entry,batchIds){
+ const current=readMemoryStrict(storage,batchIds);
+ const next=addMemory(current,entry,batchIds);
+ storage.setItem(MEMORY_KEY,saveMemory(next));
+ return next;
+}
