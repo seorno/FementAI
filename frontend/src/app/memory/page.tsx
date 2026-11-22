@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {JOURNAL_KEY,loadJournal} from '@/lib/batch-journal.mjs';
-import {MEMORY_KEY,DIMENSIONS,loadMemory,addMemory,comparison,saveMemory} from '@/lib/taste-memory.mjs';
+import {MEMORY_KEY,DIMENSIONS,readMemoryStrict,recordMemory,comparison,saveMemory} from '@/lib/taste-memory.mjs';
 type Batch={id:string;name:string;beverage:string;stage:string};
 type Scores=Record<string,number>;
 type Memory={id:string;batchId:string;date:string;intent:Scores;observed:Scores;nextTime:string;notes:string};
@@ -13,25 +13,38 @@ export default function TasteMemoryPage(){
  const [ready,setReady]=useState(false),[batches,setBatches]=useState<Batch[]>([]),[entries,setEntries]=useState<Memory[]>([]);
  const [batchId,setBatchId]=useState(''),[intent,setIntent]=useState<Scores>(zero),[observed,setObserved]=useState<Scores>(zero);
  const [nextTime,setNextTime]=useState('same'),[notes,setNotes]=useState(''),[notice,setNotice]=useState('');
- useEffect(()=>{
-  try {
-   const raw=localStorage.getItem(JOURNAL_KEY);
-   const bs=raw?loadJournal(JSON.parse(raw)) as Batch[]:[];
-   setBatches(bs);setBatchId(bs[0]?.id||'');
-   const saved=localStorage.getItem(MEMORY_KEY);
-   if(saved)setEntries(loadMemory(JSON.parse(saved),bs.map(b=>b.id)));
-  }catch{setNotice('Some saved data could not be read. Existing browser data has not been overwritten.');}
-  finally{setReady(true);}
- },[]);
- // Avoid silently overwriting unreadable or future-version data on load.
  const [canSave,setCanSave]=useState(true);
- useEffect(()=>{if(!ready)return;try{const existing=localStorage.getItem(MEMORY_KEY);if(existing){const raw=JSON.parse(existing);if(raw.version!==1){setCanSave(false);setNotice('A different taste-memory format was found. Export it manually before making changes.');}}}catch{setCanSave(false);setNotice('Unreadable taste memory detected; it will not be overwritten.');}},[ready]);
- useEffect(()=>{if(!ready||!canSave)return;try{localStorage.setItem(MEMORY_KEY,saveMemory(entries));}catch{setNotice('Browser storage failed. Your new feedback may not persist.');}},[entries,ready,canSave]);
- function record(e:React.FormEvent){e.preventDefault();if(!batchId||!canSave)return;
-  try{const x={version:1,id:crypto.randomUUID(),batchId,date:today(),intent,observed,nextTime,notes};setEntries(v=>addMemory(v,x,batches.map(b=>b.id)));setNotes('');setNotice('Taste feedback saved locally.');}
-  catch{setNotice('Could not save feedback. Check the batch and values.');}
+ useEffect(()=>{
+  const refresh=()=>{
+   try{
+    const raw=localStorage.getItem(JOURNAL_KEY);
+    const bs=raw?loadJournal(JSON.parse(raw)) as Batch[]:[];
+    const existing=readMemoryStrict(localStorage,bs.map(b=>b.id)) as Memory[];
+    setBatches(bs);setEntries(existing);
+    setBatchId(current=>bs.some(b=>b.id===current)?current:bs[0]?.id||'');
+    setCanSave(true);
+  }catch{
+    setCanSave(false);
+    setNotice('Existing records cannot be safely read. Export raw recovery data from Studio Backup before editing.');
+  }finally{setReady(true);}
+  };
+  refresh();
+  const sync=(event:StorageEvent)=>{if(event.key===JOURNAL_KEY||event.key===MEMORY_KEY||event.key===null)refresh();};
+  window.addEventListener('storage',sync);
+  return ()=>window.removeEventListener('storage',sync);
+ },[]);
+ function record(e:React.FormEvent){
+  e.preventDefault();if(!batchId||!canSave)return;
+  try{
+   const raw=localStorage.getItem(JOURNAL_KEY);
+   const currentBatches=raw?loadJournal(JSON.parse(raw)) as Batch[]:[];
+   const x={version:1,id:crypto.randomUUID(),batchId,date:today(),intent,observed,nextTime,notes};
+   const saved=recordMemory(localStorage,x,currentBatches.map(b=>b.id)) as Memory[];
+   setBatches(currentBatches);setEntries(saved);setNotes('');
+   setNotice('Taste feedback saved locally.');
+  }catch{setCanSave(false);setNotice('Save refused: records changed, storage failed, or existing evidence needs recovery. Reload to inspect before trying again.');}
  }
- function exportData(){const blob=new Blob([saveMemory(entries)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ferment-ai-taste-memory.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ function exportData(){let latest;try{const raw=localStorage.getItem(JOURNAL_KEY);const bs=raw?loadJournal(JSON.parse(raw)) as Batch[]:[];latest=readMemoryStrict(localStorage,bs.map(b=>b.id)) as Memory[];}catch{setNotice('Export refused: existing evidence needs raw recovery from Studio Backup.');return;}const blob=new Blob([saveMemory(latest)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ferment-ai-taste-memory.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  if(!ready)return <p role="status" className="mx-auto max-w-5xl p-10">Opening taste memory…</p>;
  const selected=entries.filter(x=>x.batchId===batchId).slice().reverse();
  return <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
